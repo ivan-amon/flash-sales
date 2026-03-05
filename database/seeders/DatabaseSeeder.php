@@ -15,11 +15,20 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
-        // User::factory(10)->create();
-
+        // Create a known test user
         User::factory()->create([
             'name' => 'Test User',
             'email' => 'test@example.com',
+        ]);
+
+        // Create additional random users
+        User::factory(9)->create();
+
+        // Seed in dependency order: Events → Tickets → Orders
+        $this->call([
+            EventSeeder::class,
+            TicketSeeder::class,
+            OrderSeeder::class,
         ]);
     }
 }
