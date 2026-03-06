@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasManyThrough;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -19,6 +20,7 @@ class Event extends Model
     protected $fillable = [
         'title',
         'total_tickets',
+        'organizer_id',
     ];
 
     /**
@@ -36,6 +38,11 @@ class Event extends Model
     /**
      * Get the tickets for the event.
      */
+    public function organizer(): BelongsTo
+    {
+        return $this->belongsTo(Organizer::class);
+    }
+
     public function tickets(): HasMany
     {
         return $this->hasMany(Ticket::class);

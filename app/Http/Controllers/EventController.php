@@ -24,12 +24,22 @@ class EventController extends Controller
      */
     public function store(Request $request): JsonResponse
     {
+        // Only authenticated organizers can create events
+        $organizer = $request->user();
+        if (!$organizer || !$organizer instanceof \App\Models\Organizer) {
+            return response()->json(['message' => 'Unauthorized'], 401);
+        }
+
         $validated = $request->validate([
             'title' => 'required|string|unique:events,title',
             'total_tickets' => 'required|integer|min:1',
         ]);
 
-        $event = Event::create($validated);
+        $event = Event::create([
+            'title' => $validated['title'],
+            'total_tickets' => $validated['total_tickets'],
+            'organizer_id' => $organizer->id,
+        ]);
 
         return response()->json($event, 201);
     }
@@ -47,6 +57,12 @@ class EventController extends Controller
      */
     public function update(Request $request, Event $event): JsonResponse
     {
+        // Only the event's organizer can update
+        $organizer = $request->user();
+        if (!$organizer || !$organizer instanceof \App\Models\Organizer || $event->organizer_id !== $organizer->id) {
+            return response()->json(['message' => 'Forbidden'], 403);
+        }
+
         $validated = $request->validate([
             'title' => 'sometimes|required|string|unique:events,title,' . $event->id,
             'total_tickets' => 'sometimes|required|integer|min:1',
@@ -60,10 +76,15 @@ class EventController extends Controller
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy(Event $event): JsonResponse
+    public function destroy(Request $request, Event $event): JsonResponse
     {
-        $event->delete();
+        // Only the event's organizer can delete
+        $organizer = $request->user();
+        if (!$organizer || !$organizer instanceof \App\Models\Organizer || $event->organizer_id !== $organizer->id) {
+            return response()->json(['message' => 'Forbidden'], 403);
+        }
 
+        $event->delete();
         return response()->json(null, 204);
     }
 }
