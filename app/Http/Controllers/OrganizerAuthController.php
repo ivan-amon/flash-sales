@@ -31,7 +31,7 @@ class OrganizerAuthController extends Controller
             'password' => Hash::make($validated['password']),
         ]);
 
-        $token = $organizer->createToken('auth_token')->plainTextToken;
+        $token = $organizer->createToken('auth_token', ['is_organizer'])->plainTextToken;
 
         return response()->json([
             'organizer' => $organizer,
@@ -57,7 +57,7 @@ class OrganizerAuthController extends Controller
             ]);
         }
 
-        $token = $organizer->createToken('auth_token')->plainTextToken;
+        $token = $organizer->createToken('auth_token', ['is_organizer'])->plainTextToken;
 
         return response()->json([
             'organizer' => $organizer,

@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Event;
+use App\Models\Organizer;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
@@ -26,7 +27,7 @@ class EventController extends Controller
     {
         // Only authenticated organizers can create events
         $organizer = $request->user();
-        if (!$organizer || !$organizer instanceof \App\Models\Organizer) {
+        if (!$organizer || !$organizer instanceof Organizer) {
             return response()->json(['message' => 'Unauthorized'], 401);
         }
 
@@ -59,7 +60,7 @@ class EventController extends Controller
     {
         // Only the event's organizer can update
         $organizer = $request->user();
-        if (!$organizer || !$organizer instanceof \App\Models\Organizer || $event->organizer_id !== $organizer->id) {
+        if (!$organizer || !$organizer instanceof Organizer || $event->organizer_id !== $organizer->id) {
             return response()->json(['message' => 'Forbidden'], 403);
         }
 
@@ -80,7 +81,7 @@ class EventController extends Controller
     {
         // Only the event's organizer can delete
         $organizer = $request->user();
-        if (!$organizer || !$organizer instanceof \App\Models\Organizer || $event->organizer_id !== $organizer->id) {
+        if (!$organizer || !$organizer instanceof Organizer || $event->organizer_id !== $organizer->id) {
             return response()->json(['message' => 'Forbidden'], 403);
         }
 

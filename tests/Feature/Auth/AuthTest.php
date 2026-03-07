@@ -177,7 +177,7 @@ class AuthTest extends TestCase
     public function test_authenticated_user_can_logout(): void
     {
         $user = User::factory()->create();
-        Sanctum::actingAs($user);
+        Sanctum::actingAs($user, ['is_user']);
 
         $response = $this->postJson('/api/logout');
 

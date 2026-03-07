@@ -185,7 +185,7 @@ class OrganizerAuthTest extends TestCase
     public function test_authenticated_organizer_can_logout(): void
     {
         $organizer = Organizer::factory()->create();
-        Sanctum::actingAs($organizer, [], 'organizer');
+        Sanctum::actingAs($organizer, ['is_organizer']);
 
         $response = $this->postJson('/api/organizer/logout');
 
