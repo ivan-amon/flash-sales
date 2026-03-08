@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\OrganizerLoginRequest;
+use App\Http\Requests\OrganizerRegisterRequest;
 use App\Models\Organizer;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -15,14 +17,10 @@ class OrganizerAuthController extends Controller
     /**
      * Register a new organizer and return a token.
      */
-    public function register(Request $request): JsonResponse
+    public function register(OrganizerRegisterRequest $request): JsonResponse
     {
-        $validated = $request->validate([
-            'official_name' => 'required|string|max:255',
-            'phone' => 'sometimes|nullable|string|unique:organizers,phone',
-            'email' => 'required|string|email|unique:organizers,email',
-            'password' => 'required|string|min:8|confirmed',
-        ]);
+
+        $validated = $request->validated();
 
         $organizer = Organizer::create([
             'official_name' => $validated['official_name'],
@@ -42,12 +40,10 @@ class OrganizerAuthController extends Controller
     /**
      * Login and return a token.
      */
-    public function login(Request $request): JsonResponse
+    public function login(OrganizerLoginRequest $request): JsonResponse
     {
-        $validated = $request->validate([
-            'email' => 'required|string|email',
-            'password' => 'required|string',
-        ]);
+
+        $validated = $request->validated();
 
         $organizer = Organizer::where('email', $validated['email'])->first();
 

@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\EventStoreRequest;
+use App\Http\Requests\EventUpdateRequest;
 use App\Models\Event;
 use App\Models\Organizer;
 use Illuminate\Http\JsonResponse;
@@ -23,7 +25,7 @@ class EventController extends Controller
     /**
      * Store a newly created resource in storage.
      */
-    public function store(Request $request): JsonResponse
+    public function store(EventStoreRequest $request): JsonResponse
     {
         // Only authenticated organizers can create events
         $organizer = $request->user();
@@ -31,11 +33,7 @@ class EventController extends Controller
             return response()->json(['message' => 'Unauthorized'], 401);
         }
 
-        $validated = $request->validate([
-            'title' => 'required|string|unique:events,title',
-            'total_tickets' => 'required|integer|min:1',
-            'sale_starts_at' => 'nullable|date',
-        ]);
+        $validated = $request->validated();
 
         $event = Event::create([
             'title' => $validated['title'],
@@ -58,7 +56,7 @@ class EventController extends Controller
     /**
      * Update the specified resource in storage.
      */
-    public function update(Request $request, Event $event): JsonResponse
+    public function update(EventUpdateRequest $request, Event $event): JsonResponse
     {
         // Only the event's organizer can update
         $organizer = $request->user();
@@ -66,11 +64,7 @@ class EventController extends Controller
             return response()->json(['message' => 'Forbidden'], 403);
         }
 
-        $validated = $request->validate([
-            'title' => 'sometimes|required|string|unique:events,title,' . $event->id,
-            'total_tickets' => 'sometimes|required|integer|min:1',
-            'sale_starts_at' => 'nullable|date',
-        ]);
+        $validated = $request->validated();
 
         $event->update($validated);
 
