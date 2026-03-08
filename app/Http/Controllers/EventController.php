@@ -34,12 +34,14 @@ class EventController extends Controller
         $validated = $request->validate([
             'title' => 'required|string|unique:events,title',
             'total_tickets' => 'required|integer|min:1',
+            'sale_starts_at' => 'nullable|date',
         ]);
 
         $event = Event::create([
             'title' => $validated['title'],
             'total_tickets' => $validated['total_tickets'],
             'organizer_id' => $organizer->id,
+            'sale_starts_at' => $validated['sale_starts_at'] ?? null,
         ]);
 
         return response()->json($event, 201);
@@ -67,6 +69,7 @@ class EventController extends Controller
         $validated = $request->validate([
             'title' => 'sometimes|required|string|unique:events,title,' . $event->id,
             'total_tickets' => 'sometimes|required|integer|min:1',
+            'sale_starts_at' => 'nullable|date',
         ]);
 
         $event->update($validated);

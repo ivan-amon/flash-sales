@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Enums\TicketStatus;
+use App\Models\Event;
 use App\Models\Order;
 use App\Models\Ticket;
 use Illuminate\Http\JsonResponse;
@@ -32,6 +33,13 @@ class OrderController extends Controller
         $validated = $request->validate([
             'event_id' => 'required|integer|exists:events,id',
         ]);
+
+        $event = Event::find($validated['event_id']);
+        if ($event && $event->sale_starts_at && now()->lt($event->sale_starts_at)) {
+            return response()->json([
+                'message' => 'Ticket sales for this event have not started yet.'
+            ], 422);
+        }
 
         $ticket = Ticket::where('event_id', $validated['event_id'])
             ->where('status', TicketStatus::Available)
