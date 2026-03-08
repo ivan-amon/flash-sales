@@ -19,7 +19,7 @@ Route::post('/login', [AuthController::class, 'login']);
 Route::post('/organizer/register', [OrganizerAuthController::class, 'register']);
 Route::post('/organizer/login', [OrganizerAuthController::class, 'login']);
 
-// Organizer-only event management
+// Organizer-only management
 Route::middleware(['auth:sanctum', CheckAbilities::class.':is_organizer'])->group(function () {
     Route::post('/organizer/logout', [OrganizerAuthController::class, 'logout']);
     Route::post('/events', [EventController::class, 'store']);
