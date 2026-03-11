@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Actions\Events\CreateEventAction;
 use App\Http\Requests\EventStoreRequest;
 use App\Http\Requests\EventUpdateRequest;
 use App\Models\Event;
@@ -25,7 +26,7 @@ class EventController extends Controller
     /**
      * Store a newly created resource in storage.
      */
-    public function store(EventStoreRequest $request): JsonResponse
+    public function store(EventStoreRequest $request, CreateEventAction $createEvent): JsonResponse
     {
         // Only authenticated organizers can create events
         $organizer = $request->user();
@@ -35,12 +36,8 @@ class EventController extends Controller
 
         $validated = $request->validated();
 
-        $event = Event::create([
-            'title' => $validated['title'],
-            'total_tickets' => $validated['total_tickets'],
-            'organizer_id' => $organizer->id,
-            'sale_starts_at' => $validated['sale_starts_at'] ?? null,
-        ]);
+        $data = array_merge($validated, ['organizer_id' => $organizer->id]);
+        $event = $createEvent($data);
 
         return response()->json($event, 201);
     }
