@@ -7,10 +7,10 @@ use App\Actions\Events\CreateEventAction;
 use App\Http\Requests\EventStoreRequest;
 use App\Http\Requests\EventUpdateRequest;
 use App\Models\Event;
-use App\Models\Organizer;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
+use Illuminate\Support\Facades\Gate;
 
 class EventController extends Controller
 {
@@ -33,15 +33,9 @@ class EventController extends Controller
      */
     public function store(EventStoreRequest $request, CreateEventAction $createEvent): JsonResponse
     {
-        // Only authenticated organizers can create events
-        $organizer = $request->user();
-        if (!$organizer || !$organizer instanceof Organizer) {
-            return response()->json(['message' => 'Unauthorized'], 401);
-        }
+        $validated = $request->validated(); // Validates the request data and if the user is an organizer
 
-        $validated = $request->validated();
-
-        $data = array_merge($validated, ['organizer_id' => $organizer->id]);
+        $data = array_merge($validated, ['organizer_id' => $request->user()->id]);
         $event = $createEvent($data);
 
         return response()->json($event, 201);
@@ -63,16 +57,8 @@ class EventController extends Controller
      */
     public function update(EventUpdateRequest $request, Event $event): JsonResponse
     {
-        // Only the event's organizer can update
-        $organizer = $request->user();
-        if (!$organizer || !$organizer instanceof Organizer || $event->organizer_id !== $organizer->id) {
-            return response()->json(['message' => 'Forbidden'], 403);
-        }
-
-        $validated = $request->validated();
-
+        $validated = $request->validated(); // Validates the request data and if the organizer is authorized to update the event
         $event->update($validated);
-
         return response()->json($event);
     }
 
@@ -81,12 +67,7 @@ class EventController extends Controller
      */
     public function destroy(Request $request, Event $event): JsonResponse
     {
-        // Only the event's organizer can delete
-        $organizer = $request->user();
-        if (!$organizer || !$organizer instanceof Organizer || $event->organizer_id !== $organizer->id) {
-            return response()->json(['message' => 'Forbidden'], 403);
-        }
-
+        Gate::authorize('delete', $event); // Checks if the organizer is authorized to delete the event   
         $event->delete();
         return response()->json(null, 204);
     }
