@@ -9,6 +9,12 @@ use Exception;
 
 class CreateEventAction
 {
+    /**
+     * Creates a new event and generates the associated tickets.
+     *
+     * @param array $data Must contain 'title', 'total_tickets', 'organizer_id', and 'sale_starts_at'.
+     * @return Event
+     */
     public function __invoke($data): Event
     {
         DB::beginTransaction();

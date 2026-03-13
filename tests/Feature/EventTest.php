@@ -5,6 +5,8 @@ namespace Tests\Feature;
 use App\Models\Event;
 use App\Models\Organizer;
 use App\Models\User;
+use App\Models\Ticket;
+use App\Enums\TicketStatus;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Laravel\Sanctum\Sanctum;
 use Tests\TestCase;
@@ -150,14 +152,28 @@ class EventTest extends TestCase
     {
         // Create an organizer and 3 events linked to it
         $organizer = Organizer::factory()->create();
-        Event::factory()->count(3)->create(['organizer_id' => $organizer->id]);
+        $events = Event::factory()->count(3)->create(['organizer_id' => $organizer->id]);
 
-        // Make an unauthenticated GET request
+        // For each event, create tickets: some available, some sold
+        foreach ($events as $event) {
+            // 8 available, 2 sold
+            Ticket::factory()->count(8)->create([
+                'event_id' => $event->id,
+                'status' => TicketStatus::Available,
+            ]);
+            Ticket::factory()->count(2)->sold()->create([
+                'event_id' => $event->id,
+                'status' => TicketStatus::Sold,
+            ]);
+        }
+
         $response = $this->getJson('/api/events');
 
-        // Verify it returns a 200 OK and contains 3 items
-        $response->assertStatus(200)
-            ->assertJsonCount(3);
+        $response->assertStatus(200);
+        $response->assertJsonCount(3); // 3 events
+        foreach ($response->json() as $event) {
+            $this->assertEquals($event['available_tickets'], 8);
+        }
     }
 
     public function test_guest_can_view_specific_event_by_id()
@@ -165,6 +181,16 @@ class EventTest extends TestCase
 
         $organizer = Organizer::factory()->create();
         $event = Event::factory()->create(['organizer_id' => $organizer->id]);
+        // Create tickets for the event
+        Ticket::factory()->count(8)->create([
+            'event_id' => $event->id,
+            'status' => TicketStatus::Available,
+        ]);
+        // Create some sold tickets as well
+        Ticket::factory()->count(2)->sold()->create([
+            'event_id' => $event->id,
+            'status' => TicketStatus::Sold,
+        ]);
 
         $response = $this->getJson("/api/events/{$event->id}");
 
@@ -174,6 +200,13 @@ class EventTest extends TestCase
                 'title' => $event->title,
                 'total_tickets' => $event->total_tickets,
             ]);
+        $response->assertJsonStructure([
+            'id',
+            'title',
+            'total_tickets',
+            'available_tickets',
+        ]);
+        $this->assertEquals($response->json()['available_tickets'], 8);
     }
 
     public function test_returns_404_when_searching_for_nonexistent_event()

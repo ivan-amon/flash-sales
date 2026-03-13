@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Actions\Events\AvailableTicketsAction;
 use App\Actions\Events\CreateEventAction;
 use App\Http\Requests\EventStoreRequest;
 use App\Http\Requests\EventUpdateRequest;
@@ -16,9 +17,13 @@ class EventController extends Controller
     /**
      * Display a listing of the resource.
      */
-    public function index(): JsonResponse
+    public function index(AvailableTicketsAction $availableTickets): JsonResponse
     {
-        $events = Event::all();
+        $events = Event::all()->map(function (Event $event) use ($availableTickets) {
+            $eventArray = $event->toArray();
+            $eventArray['available_tickets'] = $availableTickets($event);
+            return $eventArray;
+        });
 
         return response()->json($events);
     }
@@ -45,9 +50,12 @@ class EventController extends Controller
     /**
      * Display the specified resource.
      */
-    public function show(Event $event): JsonResponse
+    public function show(Event $event, AvailableTicketsAction $availableTickets): JsonResponse
     {
-        return response()->json($event);
+        $eventArray = $event->toArray();
+        $eventArray['available_tickets'] = $availableTickets($event);
+    
+        return response()->json($eventArray);
     }
 
     /**
