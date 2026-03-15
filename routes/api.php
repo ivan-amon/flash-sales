@@ -35,5 +35,8 @@ Route::middleware(['auth:sanctum', 'abilities:is_user'])->group(function () {
         return $request->user();
     });
     Route::post('/logout', [AuthController::class, 'logout']);
+    Route::get('/orders', [OrderController::class, 'index']);
+    Route::get('/orders/{order}', [OrderController::class, 'show']);
     Route::post('/orders', [OrderController::class, 'store']);
+
 });

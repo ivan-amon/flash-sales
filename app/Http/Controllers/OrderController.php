@@ -2,13 +2,13 @@
 
 namespace App\Http\Controllers;
 
-use App\Enums\TicketStatus;
 use App\Models\Order;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
 use App\Http\Requests\OrderStoreRequest;
 use App\Actions\Orders\CreateOrderAction;
+use Illuminate\Support\Facades\Gate;
 
 class OrderController extends Controller
 {
@@ -17,11 +17,8 @@ class OrderController extends Controller
      */
     public function index(Request $request): JsonResponse
     {
-        $orders = $request->user()
-            ->orders()
-            ->with('ticket.event')
-            ->get();
-
+        Gate::authorize('viewAny', Order::class);
+        $orders = $request->user()->orders()->with('ticket.event')->get();
         return response()->json($orders);
     }
 
@@ -30,7 +27,7 @@ class OrderController extends Controller
      */
     public function store(OrderStoreRequest $request, CreateOrderAction $createOrderAction): JsonResponse
     {
-        $validated = $request->validated(); // Validates the request data and if the user is a regular user
+        $validated = $request->validated(); // Validates the request data and if the user is a regular user, not an organizer
 
         $data = array_merge($validated, ['user_id' => $request->user()->id]);
         $order = $createOrderAction($data);
@@ -43,27 +40,8 @@ class OrderController extends Controller
      */
     public function show(Request $request, Order $order): JsonResponse
     {
-        if ($order->user_id !== $request->user()->id) {
-            return response()->json(['message' => 'Order not found.'], 404);
-        }
-
+        Gate::authorize('view', $order);
         $order->load('ticket.event');
-
         return response()->json($order);
-    }
-
-    /**
-     * Cancel the specified order and release the ticket.
-     */
-    public function destroy(Request $request, Order $order): JsonResponse
-    {
-        if ($order->user_id !== $request->user()->id) {
-            return response()->json(['message' => 'Order not found.'], 404);
-        }
-
-        $order->ticket->update(['status' => TicketStatus::Available]);
-        $order->delete();
-
-        return response()->json(null, 204);
     }
 }

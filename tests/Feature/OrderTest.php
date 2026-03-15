@@ -12,6 +12,7 @@ use App\Models\User;
 use App\Models\Event;
 use App\Models\Organizer;
 use App\Models\Ticket;
+use App\Models\Order;
 use Carbon\Carbon;
 
 class OrderTest extends TestCase
@@ -21,6 +22,13 @@ class OrderTest extends TestCase
     // ==================
     // Users
     // ==================
+    public function test_unauthenticated_user_cannot_access_orders_endpoints(): void
+    {
+        $this->getJson('/api/orders')->assertStatus(401);
+        $this->postJson('/api/orders', [])->assertStatus(401);
+        $this->getJson('/api/orders/1')->assertStatus(401);
+    }
+    // Create Order Tests
     public function test_user_can_create_order_for_available_ticket(): void
     {
         $user = User::factory()->create();
@@ -105,7 +113,7 @@ class OrderTest extends TestCase
 
         $response = $this->postJson('/api/orders', [
             // 'event_id' => missing
-        ]); 
+        ]);
 
         $response->assertStatus(422)
             ->assertJsonValidationErrors(['event_id']);
@@ -122,6 +130,122 @@ class OrderTest extends TestCase
         $response->assertStatus(422)
             ->assertJsonValidationErrors(['event_id']);
     }
+
+    // Read Order Tests
+    public function test_user_can_view_only_their_own_orders_in_index(): void
+    {
+        $user = User::factory()->create();
+        $event = Event::factory()->create([
+            'sale_starts_at' => now()->subHour(),
+        ]);
+        $ticket = Ticket::factory()->create([
+            'event_id' => $event->id,
+            'status' => TicketStatus::Available,
+        ]);
+        $order = Order::factory()->create([
+            'user_id' => $user->id,
+            'ticket_id' => $ticket->id,
+        ]);
+
+        Sanctum::actingAs($user, ['is_user']);
+        $response = $this->getJson('/api/orders')->assertStatus(200);
+        $data = $response->json();
+        $this->assertCount(1, $data);
+        $this->assertEquals($order->id, $data[0]['id']);
+    }
+
+    public function test_user_does_not_see_others_orders_in_index(): void
+    {
+        $user1 = User::factory()->create();
+        $user2 = User::factory()->create();
+        $event = Event::factory()->create([
+            'sale_starts_at' => now()->subHour(),
+        ]);
+        $ticket1 = Ticket::factory()->create([
+            'event_id' => $event->id,
+            'status' => TicketStatus::Available,
+        ]);
+        $ticket2 = Ticket::factory()->create([
+            'event_id' => $event->id,
+            'status' => TicketStatus::Available,
+        ]);
+        $order1 = Order::factory()->create([
+            'user_id' => $user1->id,
+            'ticket_id' => $ticket1->id,
+        ]);
+        $order2 = Order::factory()->create([
+            'user_id' => $user2->id,
+            'ticket_id' => $ticket2->id,
+        ]);
+
+        Sanctum::actingAs($user1, ['is_user']);
+        $response = $this->getJson('/api/orders')->assertStatus(200);
+        $data = $response->json();
+        $this->assertCount(1, $data);
+        $this->assertEquals($order1->id, $data[0]['id']);
+        $this->assertNotEquals($order2->id, $data[0]['id']);
+    }
+
+    public function test_user_can_view_own_order(): void
+    {
+        $user = User::factory()->create();
+        $event = Event::factory()->create([
+            'sale_starts_at' => now()->subHour(),
+        ]);
+        $ticket = Ticket::factory()->create([
+            'event_id' => $event->id,
+            'status' => TicketStatus::Available,
+        ]);
+        $order = Order::factory()->create([
+            'user_id' => $user->id,
+            'ticket_id' => $ticket->id,
+        ]);
+
+        Sanctum::actingAs($user, ['is_user']);
+        $response = $this->getJson("/api/orders/{$order->id}")->assertStatus(200);
+        $data = $response->json();
+        $this->assertEquals($order->id, $data['id']);
+    }
+
+    public function test_user_cannot_view_others_order(): void
+    {
+        $user1 = User::factory()->create();
+        $user2 = User::factory()->create();
+        $event = Event::factory()->create([
+            'sale_starts_at' => now()->subHour(),
+        ]);
+        $ticket = Ticket::factory()->create([
+            'event_id' => $event->id,
+            'status' => TicketStatus::Available,
+        ]);
+        $order = Order::factory()->create([
+            'user_id' => $user2->id,
+            'ticket_id' => $ticket->id,
+        ]);
+
+        Sanctum::actingAs($user1, ['is_user']);
+        $this->getJson("/api/orders/{$order->id}")->assertStatus(403);
+    }
+
+    public function test_user_cannot_view_non_existent_order(): void
+    {
+        $user1 = User::factory()->create();
+        $user2 = User::factory()->create();
+        Sanctum::actingAs($user1, ['is_user']);
+        $this->getJson('/api/orders/9999')->assertStatus(404);
+    }
+
+    public function test_user_with_no_orders_sees_empty_array_in_index(): void
+    {
+        $user = User::factory()->create();
+        Sanctum::actingAs($user, ['is_user']);
+        $response = $this->getJson('/api/orders')->assertStatus(200);
+        $data = $response->json();
+        $this->assertIsArray($data);
+        $this->assertCount(0, $data);
+    }
+
+    // Todo: Add tests to check the JSON format of the responses (already checked with curl to a seeded database)
 
     // ==================
     // Organizers
