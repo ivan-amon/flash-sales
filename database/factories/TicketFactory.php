@@ -22,6 +22,11 @@ class TicketFactory extends Factory
         ];
     }
 
+    public function available(): static
+    {
+        return $this->state(['status' => TicketStatus::Available]);
+    }
+
     public function sold(): static
     {
         return $this->state(['status' => TicketStatus::Sold]);

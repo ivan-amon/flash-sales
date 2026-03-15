@@ -18,7 +18,9 @@ class OrderFactory extends Factory
     {
         return [
             'user_id' => User::factory(),
-            'ticket_id' => Ticket::factory()->sold(),
+            'ticket_id' => Ticket::factory()->reserved(),
+            'status' => 'pending',
+            'expires_at' => now()->addMinutes(5),
         ];
     }
 }

@@ -2,6 +2,7 @@
 
 namespace App\Actions\Events;
 
+use App\Enums\TicketStatus;
 use App\Models\Event;
 use App\Models\Ticket;
 
@@ -16,7 +17,7 @@ class AvailableTicketsAction
     public function __invoke(Event $event): int
     {
         return Ticket::where('event_id', $event->id)
-                     ->where('status', 'available')
+                     ->where('status', TicketStatus::Available)
                      ->count();
     }
 }

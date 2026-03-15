@@ -24,7 +24,12 @@ class DatabaseSeeder extends Seeder
         // Create additional random users
         User::factory(9)->create();
 
-        // Seed in dependency order: Events → Tickets → Orders
+        // Create organizers
+        $this->call([
+            OrganizerSeeder::class,
+        ]);
+
+        // Seed in dependency order: Organizers → Events → Tickets → Orders
         $this->call([
             EventSeeder::class,
             TicketSeeder::class,

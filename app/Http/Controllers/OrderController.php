@@ -3,12 +3,12 @@
 namespace App\Http\Controllers;
 
 use App\Enums\TicketStatus;
-use App\Models\Event;
 use App\Models\Order;
-use App\Models\Ticket;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
+use App\Http\Requests\OrderStoreRequest;
+use App\Actions\Orders\CreateOrderAction;
 
 class OrderController extends Controller
 {
@@ -28,35 +28,12 @@ class OrderController extends Controller
     /**
      * Store a newly created order by reserving an available ticket.
      */
-    public function store(Request $request): JsonResponse
+    public function store(OrderStoreRequest $request, CreateOrderAction $createOrderAction): JsonResponse
     {
-        $validated = $request->validate([
-            'event_id' => 'required|integer|exists:events,id',
-        ]);
+        $validated = $request->validated(); // Validates the request data and if the user is a regular user
 
-        $event = Event::find($validated['event_id']);
-        if ($event && $event->sale_starts_at && now()->lt($event->sale_starts_at)) {
-            return response()->json([
-                'message' => 'Ticket sales for this event have not started yet.'
-            ], 422);
-        }
-
-        $ticket = Ticket::where('event_id', $validated['event_id'])
-            ->where('status', TicketStatus::Available)
-            ->first();
-
-        if (!$ticket) {
-            return response()->json(['message' => 'No available tickets for this event.'], 422);
-        }
-
-        $ticket->update(['status' => TicketStatus::Sold]);
-
-        $order = Order::create([
-            'user_id' => $request->user()->id,
-            'ticket_id' => $ticket->id,
-        ]);
-
-        $order->load('ticket.event');
+        $data = array_merge($validated, ['user_id' => $request->user()->id]);
+        $order = $createOrderAction($data);
 
         return response()->json($order, 201);
     }

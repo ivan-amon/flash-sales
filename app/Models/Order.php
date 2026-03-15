@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\OrderStatus;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -19,7 +20,20 @@ class Order extends Model
     protected $fillable = [
         'user_id',
         'ticket_id',
+        'status',
+        'expires_at',
     ];
+
+    /**
+     * The attributes that should be cast.
+     */
+    public function casts(): array
+    {
+        return [
+            'status' => OrderStatus::class,
+            'expires_at' => 'datetime',
+        ];
+    }
 
     /**
      * Get the user that owns the order.
