@@ -4,6 +4,7 @@ namespace App\Policies;
 
 use App\Models\Event;
 use App\Models\Organizer;
+use Illuminate\Auth\Access\Response;
 use Illuminate\Contracts\Auth\Authenticatable;
 
 class EventPolicy
@@ -19,16 +20,20 @@ class EventPolicy
     /**
      * Determine whether the organizer can update the event.
      */
-    public function update(Authenticatable $organizer, Event $event): bool
+    public function update(Authenticatable $organizer, Event $event): Response
     {
-        return $organizer instanceof Organizer && $event->organizer_id === $organizer->id;
+        return $organizer instanceof Organizer && $event->organizer_id === $organizer->id
+            ? Response::allow()
+            : Response::denyAsNotFound();
     }
 
     /**
      * Determine whether the organizer can delete the event.
      */
-    public function delete(Authenticatable $organizer, Event $event): bool
+    public function delete(Authenticatable $organizer, Event $event): Response
     {
-        return $organizer instanceof Organizer && $event->organizer_id === $organizer->id;
+        return $organizer instanceof Organizer && $event->organizer_id === $organizer->id
+            ? Response::allow()
+            : Response::denyAsNotFound();
     }
 }

@@ -57,7 +57,8 @@ class EventController extends Controller
      */
     public function update(EventUpdateRequest $request, Event $event): JsonResponse
     {
-        $validated = $request->validated(); // Validates the request data and if the organizer is authorized to update the event
+        $validated = $request->validated(); // Validates the request data and if the user is an organizer
+        Gate::authorize('update', $event); // Checks if the organizer is authorized to update the event
         $event->update($validated);
         return response()->json($event);
     }

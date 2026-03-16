@@ -224,7 +224,7 @@ class OrderTest extends TestCase
         ]);
 
         Sanctum::actingAs($user1, ['is_user']);
-        $this->getJson("/api/orders/{$order->id}")->assertStatus(403);
+        $this->getJson("/api/orders/{$order->id}")->assertStatus(404);
     }
 
     public function test_user_cannot_view_non_existent_order(): void
@@ -268,5 +268,31 @@ class OrderTest extends TestCase
         ]);
 
         $response->assertStatus(403);
+    }
+
+    public function test_organizer_cannot_view_orders(): void
+    {
+
+        $event = Event::factory()->create([
+            'sale_starts_at' => now()->subHour(),
+        ]);
+        Ticket::factory()->count(10)->create([
+            'event_id' => $event->id,
+            'status' => TicketStatus::Available,
+        ]);
+        Order::factory()->count(5)->create([
+            'ticket_id' => Ticket::factory()->create([
+                'event_id' => $event->id,
+                'status' => TicketStatus::Available,
+            ])->id,
+        ]);
+
+        $organizer = Organizer::factory()->create();
+        Sanctum::actingAs($organizer, ['is_organizer']);
+
+        // Todo: Change the code from 403 to 404 in the controller and the policy
+        $this->getJson('/api/orders')->assertStatus(403);
+        $this->getJson('/api/orders/1')->assertStatus(403);
+        $this->getJson('/api/orders/9999')->assertStatus(404);
     }
 }

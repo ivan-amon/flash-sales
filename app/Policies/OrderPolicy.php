@@ -4,6 +4,7 @@ namespace App\Policies;
 
 use App\Models\Order;
 use App\Models\User;
+use Illuminate\Auth\Access\Response;
 // use Illuminate\Auth\Access\Response;
 use Illuminate\Contracts\Auth\Authenticatable;
 
@@ -12,17 +13,21 @@ class OrderPolicy
     /**
      * Determine whether the user can view any models.
      */
-    public function viewAny(Authenticatable $user): bool
+    public function viewAny(Authenticatable $user): Response
     {
-        return $user instanceof User;
+        return $user instanceof User
+            ? Response::allow()
+            : Response::denyAsNotFound();
     }
 
     /**
      * Determine whether the user can view the model.
      */
-    public function view(Authenticatable $user, Order $order): bool
+    public function view(Authenticatable $user, Order $order): Response
     {
-        return $user instanceof User && $order->user_id === $user->id;
+        return $user instanceof User && $order->user_id === $user->id
+            ? Response::allow()
+            : Response::denyAsNotFound();
     }
 
     /**

@@ -8,7 +8,7 @@ class EventUpdateRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        return $this->user()->can('update', $this->route('event'));
+        return true;
     }
 
     public function rules(): array

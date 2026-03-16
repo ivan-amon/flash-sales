@@ -82,7 +82,7 @@ class EventTest extends TestCase
             'title' => 'Hacked Title',
         ]);
 
-        $response->assertStatus(403);
+        $response->assertStatus(404);
     }
 
     public function test_organizer_cannot_delete_other_organizer_event()
@@ -94,7 +94,7 @@ class EventTest extends TestCase
         Sanctum::actingAs($organizer1, ['is_organizer']);
 
         $response = $this->deleteJson("/api/events/{$event->id}");
-        $response->assertStatus(403);
+        $response->assertStatus(404);
     }
 
     // ==================================
