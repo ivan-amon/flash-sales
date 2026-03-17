@@ -22,7 +22,6 @@ class ProcessOrderPaymentRequest extends FormRequest
     public function rules(): array
     {
         return [
-            "simulate_success" => "boolean|required",
             "payment_method" => "string|required|in:credit_card,paypal"
         ];
     }
