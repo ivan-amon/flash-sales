@@ -291,8 +291,8 @@ class OrderTest extends TestCase
         Sanctum::actingAs($organizer, ['is_organizer']);
 
         // Todo: Change the code from 403 to 404 in the controller and the policy
-        $this->getJson('/api/orders')->assertStatus(403);
-        $this->getJson('/api/orders/1')->assertStatus(403);
+        $this->getJson('/api/orders')->assertStatus(404);
+        $this->getJson('/api/orders/1')->assertStatus(404);
         $this->getJson('/api/orders/9999')->assertStatus(404);
     }
 }

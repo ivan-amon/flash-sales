@@ -19,15 +19,7 @@ Route::post('/organizer/login', [OrganizerAuthController::class, 'login']);
 // Organizer-only management
 Route::middleware(['auth:sanctum', 'abilities:is_organizer'])->group(function () {
     Route::post('/organizer/logout', [OrganizerAuthController::class, 'logout']);
-    Route::post('/events', [EventController::class, 'store']);
-    Route::put('/events/{event}', [EventController::class, 'update']);
-    Route::patch('/events/{event}', [EventController::class, 'update']);
-    Route::delete('/events/{event}', [EventController::class, 'destroy']);
 });
-
-// Public event routes
-Route::get('/events', [EventController::class, 'index']);
-Route::get('/events/{event}', [EventController::class, 'show']);
 
 // Other authenticated user routes
 Route::middleware(['auth:sanctum', 'abilities:is_user'])->group(function () {
@@ -35,8 +27,20 @@ Route::middleware(['auth:sanctum', 'abilities:is_user'])->group(function () {
         return $request->user();
     });
     Route::post('/logout', [AuthController::class, 'logout']);
+});
+
+// Authenticated routes for orders and events
+Route::middleware(['auth:sanctum'])->group(function () {
+    Route::post('/events', [EventController::class, 'store']);
+    Route::put('/events/{event}', [EventController::class, 'update']);
+    Route::patch('/events/{event}', [EventController::class, 'update']);
+    Route::delete('/events/{event}', [EventController::class, 'destroy']);
     Route::get('/orders', [OrderController::class, 'index']);
     Route::get('/orders/{order}', [OrderController::class, 'show']);
     Route::post('/orders', [OrderController::class, 'store']);
-    Route::post('/orders/{order}/pay', [OrderController::class, 'pay']);
+    Route::post('/orders/{order}/pay', [OrderController::class, 'processPayment']);
 });
+
+// Public event routes
+Route::get('/events', [EventController::class, 'index']);
+Route::get('/events/{event}', [EventController::class, 'show']);

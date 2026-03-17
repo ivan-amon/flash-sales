@@ -129,7 +129,7 @@ class EventTest extends TestCase
             'title' => 'User Update',
         ]);
 
-        $response->assertStatus(403);
+        $response->assertStatus(404);
     }
 
     public function test_user_cannot_delete_event()
@@ -141,7 +141,7 @@ class EventTest extends TestCase
         Sanctum::actingAs($user, ['is_user']);
 
         $response = $this->deleteJson("/api/events/{$event->id}");
-        $response->assertStatus(403);
+        $response->assertStatus(404);
     }
 
     // ==========================================
