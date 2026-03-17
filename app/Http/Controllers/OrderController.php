@@ -61,6 +61,7 @@ class OrderController extends Controller
      */
     public function processPayment(ProcessOrderPaymentRequest $request, Order $order, ProcessOrderPaymentAction $processOrderPaymentAction): JsonResponse
     {
+        Gate::authorize('update', $order); // Authorize the user to update the order (i.e., process payment)
         try {
             $request_data  = $request->validated();
             $request_data['order_id'] = $order->id;

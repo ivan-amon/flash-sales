@@ -38,13 +38,15 @@ class OrderPolicy
         return $user instanceof User;
     }
 
-    // /**
-    //  * Determine whether the user can update the model.
-    //  */
-    // public function update(Authenticatable $user, Order $order): bool
-    // {
-    //     return false;
-    // }
+    /**
+     * Determine whether the user can update the model.
+     */
+    public function update(Authenticatable $user, Order $order): Response
+    {
+        return $user instanceof User && $order->user_id === $user->id
+            ? Response::allow()
+            : Response::denyAsNotFound();
+    }
 
     /**
      * Determine whether the user can delete the model.
