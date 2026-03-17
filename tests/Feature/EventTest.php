@@ -22,7 +22,7 @@ class EventTest extends TestCase
     {
 
         $organizer = Organizer::factory()->create();
-        Sanctum::actingAs($organizer, ['is_organizer']);
+        Sanctum::actingAs($organizer);
 
         $eventData = [
             'title' => 'Sample Event',
@@ -48,7 +48,7 @@ class EventTest extends TestCase
         $organizer = Organizer::factory()->create();
         $event = Event::factory()->create(['organizer_id' => $organizer->id]);
 
-        Sanctum::actingAs($organizer, ['is_organizer']);
+        Sanctum::actingAs($organizer);
 
         $response = $this->putJson("/api/events/{$event->id}", [
             'title' => 'Updated Event',
@@ -63,7 +63,7 @@ class EventTest extends TestCase
         $organizer = Organizer::factory()->create();
         $event = Event::factory()->create(['organizer_id' => $organizer->id]);
 
-        Sanctum::actingAs($organizer, ['is_organizer']);
+        Sanctum::actingAs($organizer);
 
         $response = $this->deleteJson("/api/events/{$event->id}");
         $response->assertStatus(204);
@@ -76,7 +76,7 @@ class EventTest extends TestCase
         $organizer2 = Organizer::factory()->create();
         $event = Event::factory()->create(['organizer_id' => $organizer2->id]);
 
-        Sanctum::actingAs($organizer1, ['is_organizer']);
+        Sanctum::actingAs($organizer1);
 
         $response = $this->putJson("/api/events/{$event->id}", [
             'title' => 'Hacked Title',
@@ -91,7 +91,7 @@ class EventTest extends TestCase
         $organizer2 = Organizer::factory()->create();
         $event = Event::factory()->create(['organizer_id' => $organizer2->id]);
 
-        Sanctum::actingAs($organizer1, ['is_organizer']);
+        Sanctum::actingAs($organizer1);
 
         $response = $this->deleteJson("/api/events/{$event->id}");
         $response->assertStatus(404);
@@ -104,7 +104,7 @@ class EventTest extends TestCase
     {
         $user = User::factory()->create();
 
-        Sanctum::actingAs($user, ['is_user']);
+        Sanctum::actingAs($user);
 
         $response = $this->postJson('/api/events', [
             'title' => 'User Event',
@@ -123,7 +123,7 @@ class EventTest extends TestCase
         $organizer = Organizer::factory()->create();
         $event = Event::factory()->create(['organizer_id' => $organizer->id]);
 
-        Sanctum::actingAs($user, ['is_user']);
+        Sanctum::actingAs($user);
 
         $response = $this->putJson("/api/events/{$event->id}", [
             'title' => 'User Update',
@@ -138,7 +138,7 @@ class EventTest extends TestCase
         $organizer = Organizer::factory()->create();
         $event = Event::factory()->create(['organizer_id' => $organizer->id]);
 
-        Sanctum::actingAs($user, ['is_user']);
+        Sanctum::actingAs($user);
 
         $response = $this->deleteJson("/api/events/{$event->id}");
         $response->assertStatus(404);

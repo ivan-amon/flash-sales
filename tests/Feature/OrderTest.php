@@ -32,7 +32,7 @@ class OrderTest extends TestCase
     public function test_user_can_create_order_for_available_ticket(): void
     {
         $user = User::factory()->create();
-        Sanctum::actingAs($user, ['is_user']);
+        Sanctum::actingAs($user);
 
         $event = Event::factory()->create([
             'sale_starts_at' => now()->subHour(),
@@ -70,7 +70,7 @@ class OrderTest extends TestCase
     public function test_user_cannot_create_order_for_event_not_on_sale(): void
     {
         $user = User::factory()->create();
-        Sanctum::actingAs($user, ['is_user']);
+        Sanctum::actingAs($user);
         $event = Event::factory()->create([
             'sale_starts_at' => now()->addHour(),
         ]);
@@ -89,7 +89,7 @@ class OrderTest extends TestCase
     public function test_user_cannot_create_order_for_event_with_no_available_tickets(): void
     {
         $user = User::factory()->create();
-        Sanctum::actingAs($user, ['is_user']);
+        Sanctum::actingAs($user);
 
         $event = Event::factory()->create([
             'sale_starts_at' => now()->subHour(),
@@ -109,7 +109,7 @@ class OrderTest extends TestCase
     public function test_user_cannot_create_order_with_invalid_data(): void
     {
         $user = User::factory()->create();
-        Sanctum::actingAs($user, ['is_user']);
+        Sanctum::actingAs($user);
 
         $response = $this->postJson('/api/orders', [
             // 'event_id' => missing
@@ -122,7 +122,7 @@ class OrderTest extends TestCase
     public function test_user_cannot_create_order_for_non_existent_event(): void
     {
         $user = User::factory()->create();
-        Sanctum::actingAs($user, ['is_user']);
+        Sanctum::actingAs($user);
         $response = $this->postJson('/api/orders', [
             'event_id' => 9999, // Non-existent event ID
         ]);
@@ -147,7 +147,7 @@ class OrderTest extends TestCase
             'ticket_id' => $ticket->id,
         ]);
 
-        Sanctum::actingAs($user, ['is_user']);
+        Sanctum::actingAs($user);
         $response = $this->getJson('/api/orders')->assertStatus(200);
         $data = $response->json();
         $this->assertCount(1, $data);
@@ -178,7 +178,7 @@ class OrderTest extends TestCase
             'ticket_id' => $ticket2->id,
         ]);
 
-        Sanctum::actingAs($user1, ['is_user']);
+        Sanctum::actingAs($user1);
         $response = $this->getJson('/api/orders')->assertStatus(200);
         $data = $response->json();
         $this->assertCount(1, $data);
@@ -201,7 +201,7 @@ class OrderTest extends TestCase
             'ticket_id' => $ticket->id,
         ]);
 
-        Sanctum::actingAs($user, ['is_user']);
+        Sanctum::actingAs($user);
         $response = $this->getJson("/api/orders/{$order->id}")->assertStatus(200);
         $data = $response->json();
         $this->assertEquals($order->id, $data['id']);
@@ -223,7 +223,7 @@ class OrderTest extends TestCase
             'ticket_id' => $ticket->id,
         ]);
 
-        Sanctum::actingAs($user1, ['is_user']);
+        Sanctum::actingAs($user1);
         $this->getJson("/api/orders/{$order->id}")->assertStatus(404);
     }
 
@@ -231,14 +231,14 @@ class OrderTest extends TestCase
     {
         $user1 = User::factory()->create();
         $user2 = User::factory()->create();
-        Sanctum::actingAs($user1, ['is_user']);
+        Sanctum::actingAs($user1);
         $this->getJson('/api/orders/9999')->assertStatus(404);
     }
 
     public function test_user_with_no_orders_sees_empty_array_in_index(): void
     {
         $user = User::factory()->create();
-        Sanctum::actingAs($user, ['is_user']);
+        Sanctum::actingAs($user);
         $response = $this->getJson('/api/orders')->assertStatus(200);
         $data = $response->json();
         $this->assertIsArray($data);
@@ -253,7 +253,7 @@ class OrderTest extends TestCase
     public function test_organizer_cannot_create_order(): void
     {
         $organizer = Organizer::factory()->create();
-        Sanctum::actingAs($organizer, ['is_organizer']);
+        Sanctum::actingAs($organizer);
 
         $event = Event::factory()->create([
             'sale_starts_at' => now()->subHour(),
@@ -288,7 +288,7 @@ class OrderTest extends TestCase
         ]);
 
         $organizer = Organizer::factory()->create();
-        Sanctum::actingAs($organizer, ['is_organizer']);
+        Sanctum::actingAs($organizer);
 
         // Todo: Change the code from 403 to 404 in the controller and the policy
         $this->getJson('/api/orders')->assertStatus(404);
