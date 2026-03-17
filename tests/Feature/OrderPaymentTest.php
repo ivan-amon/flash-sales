@@ -2,19 +2,19 @@
 
 namespace Tests\Feature;
 
+use App\Contracts\PaymentGateway;
 use App\Enums\OrderStatus;
 use App\Enums\TicketStatus;
-use App\Contracts\PaymentGateway;
-use App\Models\User;
 use App\Models\Event;
-use App\Models\Ticket;
 use App\Models\Order;
 use App\Models\Organizer;
+use App\Models\Ticket;
+use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Foundation\Testing\WithFaker;
+use Illuminate\Support\Carbon;
 use Laravel\Sanctum\Sanctum;
 use Tests\TestCase;
-use Illuminate\Support\Carbon;
 
 class OrderPaymentTest extends TestCase
 {
@@ -38,7 +38,7 @@ class OrderPaymentTest extends TestCase
         $event = Event::factory()->create(['sale_starts_at' => now()->subDay()]);
         $ticket = Ticket::factory()->create([
             'event_id' => $event->id,
-            'status' => TicketStatus::Available
+            'status' => TicketStatus::Available,
         ]);
 
         $order = Order::factory()->create([
@@ -73,6 +73,11 @@ class OrderPaymentTest extends TestCase
             'id' => $order->id,
             'status' => OrderStatus::Confirmed->value,
         ]);
+
+        $this->assertDatabaseHas('tickets', [
+            'id' => $order->ticket_id,
+            'status' => TicketStatus::Sold->value,
+        ]);
     }
 
     public function test_payment_of_already_confirmed_order()
@@ -106,6 +111,10 @@ class OrderPaymentTest extends TestCase
             'id' => $order->id,
             'status' => OrderStatus::Cancelled->value,
         ]);
+        $this->assertDatabaseHas('tickets', [
+            'id' => $order->ticket_id,
+            'status' => TicketStatus::Available->value,
+        ]);
     }
 
     public function test_failed_payment_sets_order_cancelled()
@@ -124,10 +133,14 @@ class OrderPaymentTest extends TestCase
 
         $response->assertStatus(200)
             ->assertJsonPath('data.status', OrderStatus::Cancelled->value);
-        
+
         $this->assertDatabaseHas('orders', [
             'id' => $order->id,
             'status' => OrderStatus::Cancelled->value,
+        ]);
+        $this->assertDatabaseHas('tickets', [
+            'id' => $order->ticket_id,
+            'status' => TicketStatus::Available->value,
         ]);
     }
 
@@ -136,12 +149,12 @@ class OrderPaymentTest extends TestCase
         [$user, $order] = $this->createOrder();
         Sanctum::actingAs($user);
 
-        $this->postJson("/api/orders/{$order->id}/pay", ["payment_method" => 'invalid_method'])
+        $this->postJson("/api/orders/{$order->id}/pay", ['payment_method' => 'invalid_method'])
             ->assertStatus(422)
             ->assertJsonValidationErrors(['payment_method']);
     }
 
-        public function test_payment_data_validation_no_data()
+    public function test_payment_data_validation_no_data()
     {
         [$user, $order] = $this->createOrder();
         Sanctum::actingAs($user);
