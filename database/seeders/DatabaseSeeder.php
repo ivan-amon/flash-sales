@@ -2,6 +2,10 @@
 
 namespace Database\Seeders;
 
+use App\Enums\TicketStatus;
+use App\Models\Event;
+use App\Models\Organizer;
+use App\Models\Ticket;
 use App\Models\User;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
@@ -15,27 +19,24 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
-        // Create a known test user
-            // Create a known test user with password 'test1234'
+        foreach (range(1, 50) as $n) {
             User::factory()->create([
-                'name' => 'Test User',
-                'email' => 'test@example.com',
+                'name' => "Test User $n",
+                'email' => "test{$n}@email.com",
                 'password' => bcrypt('test1234'),
             ]);
+        }
 
-        // Create additional random users
-        User::factory(9)->create();
-
-        // Create organizers
-        $this->call([
-            OrganizerSeeder::class,
+        $event = Event::factory()->create([
+            'title' => 'Evento de prueba',
+            'total_tickets' => 5,
+            'organizer_id' => Organizer::factory()->create()->id,
+            'sale_starts_at' => now()->subDay(),
         ]);
 
-        // Seed in dependency order: Organizers → Events → Tickets → Orders
-        $this->call([
-            EventSeeder::class,
-            TicketSeeder::class,
-            OrderSeeder::class,
+        Ticket::factory()->count(5)->create([
+            'event_id' => $event->id,
+            'status' => TicketStatus::Available,
         ]);
     }
 }
