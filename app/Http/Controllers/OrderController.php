@@ -8,8 +8,12 @@ use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
 use App\Http\Requests\OrderStoreRequest;
 use App\Actions\Orders\CreateOrderAction;
+use App\Actions\Orders\ProcessOrderPaymentAction;
+use App\Exceptions\Orders\OrderExpiredException;
+use App\Exceptions\Orders\OrderNotPendingException;
 use App\Exceptions\Tickets\NotAvailableTicketsException;
 use App\Exceptions\Tickets\TicketSalesNotStartedException;
+use App\Http\Requests\ProcessOrderPaymentRequest;
 use Illuminate\Support\Facades\Gate;
 
 class OrderController extends Controller
@@ -33,12 +37,11 @@ class OrderController extends Controller
         $data = array_merge($validated, ['user_id' => $request->user()->id]);
 
         try {
-        $order = $createOrderAction($data);
-        return response()->json($order, 201);
-
-        } catch(TicketSalesNotStartedException $e) {
+            $order = $createOrderAction($data);
+            return response()->json($order, 201);
+        } catch (TicketSalesNotStartedException $e) {
             return response()->json(['error' => $e->getMessage()], 403);
-        } catch(NotAvailableTicketsException $e) {
+        } catch (NotAvailableTicketsException $e) {
             return response()->json(['error' => $e->getMessage()], 409);
         }
     }
@@ -56,8 +59,25 @@ class OrderController extends Controller
     /**
      * Process the payment for the specified order.
      */
-    public function processPayment()//: JsonResponse
+    public function processPayment(ProcessOrderPaymentRequest $request, Order $order, ProcessOrderPaymentAction $processOrderPaymentAction): JsonResponse
     {
-
+        try {
+            $request_data  = $request->validated();
+            $request_data['order_id'] = $order->id;
+            $processed_order = $processOrderPaymentAction($request_data);
+            return response()->json([
+                'message' => 'Order processed successfully',
+                'data' => [
+                    'order_id' => $processed_order->id,
+                    'status' => $processed_order->status,
+                    'payment_method' => $request_data['payment_method'],
+                    'updated_at' => $processed_order->updated_at,
+                ],
+            ]);
+        } catch (OrderNotPendingException $e) {
+            return response()->json(['error' => $e->getMessage()], 409);
+        } catch (OrderExpiredException $e) {
+            return response()->json(['error' => $e->getMessage()], 410);
+        }
     }
 }
