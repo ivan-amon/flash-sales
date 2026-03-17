@@ -8,6 +8,8 @@ use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
 use App\Http\Requests\OrderStoreRequest;
 use App\Actions\Orders\CreateOrderAction;
+use App\Exceptions\Tickets\NotAvailableTicketsException;
+use App\Exceptions\Tickets\TicketSalesNotStartedException;
 use Illuminate\Support\Facades\Gate;
 
 class OrderController extends Controller
@@ -28,11 +30,17 @@ class OrderController extends Controller
     public function store(OrderStoreRequest $request, CreateOrderAction $createOrderAction): JsonResponse
     {
         $validated = $request->validated(); // Validates the request data and if the user is a regular user, not an organizer
-
         $data = array_merge($validated, ['user_id' => $request->user()->id]);
-        $order = $createOrderAction($data);
 
+        try {
+        $order = $createOrderAction($data);
         return response()->json($order, 201);
+
+        } catch(TicketSalesNotStartedException $e) {
+            return response()->json(['error' => $e->getMessage()], 403);
+        } catch(NotAvailableTicketsException $e) {
+            return response()->json(['error' => $e->getMessage()], 409);
+        }
     }
 
     /**
@@ -43,5 +51,13 @@ class OrderController extends Controller
         Gate::authorize('view', $order);
         $order->load('ticket.event');
         return response()->json($order);
+    }
+
+    /**
+     * Process the payment for the specified order.
+     */
+    public function processPayment()//: JsonResponse
+    {
+
     }
 }

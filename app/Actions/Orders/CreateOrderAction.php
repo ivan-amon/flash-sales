@@ -5,6 +5,9 @@ namespace App\Actions\Orders;
 use App\Enums\OrderStatus;
 use App\Models\Event;
 use App\Enums\TicketStatus;
+
+use App\Exceptions\Tickets\NotAvailableTicketsException;
+use App\Exceptions\Tickets\TicketSalesNotStartedException;
 use App\Models\Order;
 
 class CreateOrderAction
@@ -14,12 +17,12 @@ class CreateOrderAction
         $event = Event::findOrFail($data['event_id']);
 
         if ($event->sale_starts_at > now()) {
-            abort(403, 'Ticket sales have not started for this event.');
+            throw new  TicketSalesNotStartedException("Ticket sales for event {$event->id} have not started yet.");
         }
 
         $ticket = $event->tickets()->where('status', TicketStatus::Available)->first();
         if (!$ticket) {
-            abort(409, 'No available tickets for this event.');
+            throw new NotAvailableTicketsException("No available tickets for event {$event->id}.");
         }
 
         $ticket->status = TicketStatus::Reserved;
@@ -33,4 +36,4 @@ class CreateOrderAction
             'expires_at' => $expiresAt,
         ]);
     }
-}       
+}
