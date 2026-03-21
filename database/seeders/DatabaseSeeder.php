@@ -9,6 +9,7 @@ use App\Models\Ticket;
 use App\Models\User;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Facades\Redis;
 
 class DatabaseSeeder extends Seeder
 {
@@ -19,7 +20,7 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
-        foreach (range(1, 50) as $n) {
+        foreach (range(1, 200) as $n) {
             User::factory()->create([
                 'name' => "Test User $n",
                 'email' => "test{$n}@email.com",
@@ -38,5 +39,7 @@ class DatabaseSeeder extends Seeder
             'event_id' => $event->id,
             'status' => TicketStatus::Available,
         ]);
+
+        Redis::set("available_tickets_{$event->id}", 5);
     }
 }
