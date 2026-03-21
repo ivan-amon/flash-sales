@@ -10,6 +10,11 @@
 /.nova
 /.phpunit.cache
 /.vscode
+/.claude
+.mcp.json
+AGENTS.md
+CLAUDE.md
+boost.json
 /.zed
 /auth.json
 /node_modules
