@@ -8,6 +8,7 @@ use App\Enums\TicketStatus;
 use App\Exceptions\Orders\OrderExpiredException;
 use App\Exceptions\Orders\OrderNotPendingException;
 use App\Models\Order;
+use Illuminate\Support\Facades\Redis;
 
 class ProcessOrderPaymentAction
 {
@@ -38,6 +39,8 @@ class ProcessOrderPaymentAction
             if ($ticket) {
                 $ticket->status = TicketStatus::Available;
                 $ticket->save();
+                $key = "available_tickets_{$ticket->event_id}";
+                Redis::incr($key);
             }
             throw new OrderExpiredException("Order {$order->id} has expired and has been cancelled.");
         }
@@ -48,7 +51,13 @@ class ProcessOrderPaymentAction
         $order->save();
 
         if ($ticket) {
-            $ticket->status = $payment_successful ? TicketStatus::Sold : TicketStatus::Available;
+            if ($payment_successful) {
+                $ticket->status = TicketStatus::Sold;
+            } else {
+                $ticket->status = TicketStatus::Available;
+                $key = "available_tickets_{$ticket->event_id}";
+                Redis::incr($key);
+            }
             $ticket->save();
         }
 

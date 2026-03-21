@@ -4,16 +4,16 @@ namespace App\Actions\Events;
 
 use App\Models\Event;
 use App\Models\Ticket;
-use Illuminate\Support\Facades\DB;
 use Exception;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Redis;
 
 class CreateEventAction
 {
     /**
      * Creates a new event and generates the associated tickets.
      *
-     * @param array $data Must contain 'title', 'total_tickets', 'organizer_id', and 'sale_starts_at'.
-     * @return Event
+     * @param  array  $data  Must contain 'title', 'total_tickets', 'organizer_id', and 'sale_starts_at'.
      */
     public function __invoke($data): Event
     {
@@ -39,6 +39,11 @@ class CreateEventAction
 
             Ticket::insert($tickets);
             DB::commit();
+
+            // Store available tickets in Redis for quick access during sales
+            $key = "available_tickets_{$event->id}";
+            Redis::set($key, $data['total_tickets']);
+
             return $event;
 
         } catch (Exception $e) {
