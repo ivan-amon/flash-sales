@@ -1,6 +1,6 @@
 # Project Status 📊
 
-Currently, the project does not handle possible concurrency errors (such as race conditions), and the payment gateway is simulated.
+Race conditions have been resolved using Redis-based locking. The payment gateway is simulated.
 
 # Flash Sales ⚡
 
@@ -26,9 +26,7 @@ It allows organizers to create events, manage tickets, process orders, and simul
 
 ## Future Improvements 🚀
 
-This project aims to handle concurrency issues such as race conditions in future releases, ensuring robust and reliable order and ticket management during high-demand flash sales.
-
-Additionally, realistic payment gateways will be integrated in future versions to support real-world payment processing.
+Realistic payment gateways will be integrated in future versions to support real-world payment processing.
 
 ## Installation 🛠️
 
@@ -45,6 +43,7 @@ Technologies from the Laravel ecosystem used in this project include:
 - Eloquent ORM 🎟️
 - Sanctum (API authentication) 🔐
 - Sail (development environment) 🐳
+- Redis (race condition prevention via atomic locking) 🔒
 - Laravel Boost (AI tooling) 🤖
 
 Project developed with Laravel 12. ❤️
