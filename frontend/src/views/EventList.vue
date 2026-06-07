@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
+import { RouterLink } from 'vue-router'
 import { apiFetch } from '../utils/http'
 import type { EventItem } from '../types/event'
 
@@ -76,7 +77,10 @@ onMounted(async () => {
 
     <div v-else class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4">
       <div v-for="event in filteredEvents" :key="event.id" class="col">
-        <div class="card h-100 bg-secondary">
+        <RouterLink
+          :to="{ name: 'event-detail', params: { id: event.id } }"
+          class="card h-100 bg-secondary text-reset text-decoration-none"
+        >
           <div class="card-body d-flex flex-column">
             <h5 class="card-title">{{ event.title }}</h5>
             <p class="card-text text-light mb-2">
@@ -89,7 +93,7 @@ onMounted(async () => {
               {{ event.available_tickets }} / {{ event.total_tickets }} tickets available
             </span>
           </div>
-        </div>
+        </RouterLink>
       </div>
     </div>
   </div>

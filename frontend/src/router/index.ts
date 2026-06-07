@@ -22,6 +22,23 @@ const router = createRouter({
       component: () => import('../views/EventList.vue'),
     },
     {
+      path: '/events/:id',
+      name: 'event-detail',
+      component: () => import('../views/EventDetail.vue'),
+    },
+    {
+      path: '/orders/:id/checkout',
+      name: 'order-checkout',
+      component: () => import('../views/Checkout.vue'),
+      meta: { requiresUser: true },
+    },
+    {
+      path: '/my-orders',
+      name: 'my-orders',
+      component: () => import('../views/MyOrders.vue'),
+      meta: { requiresUser: true },
+    },
+    {
       path: '/login',
       name: 'login',
       component: () => import('../views/LoginForm.vue'),
@@ -51,10 +68,14 @@ const router = createRouter({
 })
 
 router.beforeEach((to) => {
-  const { isOrganizer } = useAuth()
+  const { isOrganizer, isUser } = useAuth()
 
   if (to.meta.requiresOrganizer && !isOrganizer.value) {
     return { name: 'organizer-login' }
+  }
+
+  if (to.meta.requiresUser && !isUser.value) {
+    return { name: 'login' }
   }
 })
 

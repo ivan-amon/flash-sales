@@ -4,7 +4,7 @@ import logo from './assets/logo.svg'
 import { useAuth } from './composables/useAuth'
 
 const router = useRouter()
-const { user, organizer, isAuthenticated, isOrganizer, logout } = useAuth()
+const { user, organizer, isAuthenticated, isOrganizer, isUser, logout } = useAuth()
 
 async function handleLogout(): Promise<void> {
   await logout()
@@ -22,6 +22,7 @@ async function handleLogout(): Promise<void> {
 
       <div class="navbar-nav">
         <router-link class="nav-link" to="/events">Events</router-link>
+        <router-link v-if="isUser" class="nav-link" to="/my-orders">My Orders</router-link>
       </div>
 
       <div class="ms-auto d-flex align-items-center">
