@@ -2,13 +2,15 @@
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { apiFetch } from '../../utils/http'
+import { combineDateTime } from '../../utils/datetime'
 import type { ValidationErrors } from '../../types/user'
 
 const router = useRouter()
 
 const title = ref('')
 const totalTickets = ref<number | null>(null)
-const saleStartsAt = ref('')
+const saleDate = ref('')
+const saleTime = ref('')
 const errors = ref<ValidationErrors>({})
 const generalError = ref<string | null>(null)
 const isSubmitting = ref(false)
@@ -24,7 +26,7 @@ async function handleSubmit(): Promise<void> {
       body: JSON.stringify({
         title: title.value,
         total_tickets: totalTickets.value,
-        sale_starts_at: saleStartsAt.value || null,
+        sale_starts_at: combineDateTime(saleDate.value, saleTime.value),
       }),
     })
 
@@ -90,17 +92,32 @@ async function handleSubmit(): Promise<void> {
               </div>
 
               <div class="mb-4">
-                <label for="sale_starts_at" class="form-label">
-                  Sale starts at <span class="text-muted">(optional)</span>
+                <label class="form-label">
+                  Sale starts at <span class="text-muted fst-italic">(date and time)</span>
                 </label>
-                <input
-                  id="sale_starts_at"
-                  v-model="saleStartsAt"
-                  type="datetime-local"
-                  class="form-control"
-                  :class="{ 'is-invalid': errors.sale_starts_at }"
-                />
-                <div v-if="errors.sale_starts_at" class="invalid-feedback">
+                <div class="row g-2">
+                  <div class="col-7">
+                    <input
+                      id="sale_date"
+                      v-model="saleDate"
+                      type="date"
+                      class="form-control"
+                      :class="{ 'is-invalid': errors.sale_starts_at }"
+                      aria-label="Sale start date"
+                    />
+                  </div>
+                  <div class="col-5">
+                    <input
+                      id="sale_time"
+                      v-model="saleTime"
+                      type="time"
+                      class="form-control"
+                      :class="{ 'is-invalid': errors.sale_starts_at }"
+                      aria-label="Sale start time"
+                    />
+                  </div>
+                </div>
+                <div v-if="errors.sale_starts_at" class="invalid-feedback d-block">
                   {{ errors.sale_starts_at[0] }}
                 </div>
               </div>

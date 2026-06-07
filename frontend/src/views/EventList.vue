@@ -79,7 +79,7 @@ onMounted(async () => {
       <div v-for="event in filteredEvents" :key="event.id" class="col">
         <RouterLink
           :to="{ name: 'event-detail', params: { id: event.id } }"
-          class="card h-100 bg-secondary text-reset text-decoration-none"
+          class="card event-card h-100 bg-secondary text-reset text-decoration-none"
         >
           <div class="card-body d-flex flex-column">
             <h5 class="card-title">{{ event.title }}</h5>
@@ -90,7 +90,10 @@ onMounted(async () => {
               class="badge mt-auto align-self-start"
               :class="event.available_tickets > 0 ? 'bg-success' : 'bg-danger'"
             >
-              {{ event.available_tickets }} / {{ event.total_tickets }} tickets available
+              <template v-if="event.available_tickets > 0">
+                {{ event.available_tickets }} / {{ event.total_tickets }} tickets available
+              </template>
+              <template v-else>Sold Out!</template>
             </span>
           </div>
         </RouterLink>
@@ -104,5 +107,16 @@ onMounted(async () => {
   .search-input {
     max-width: 18rem;
   }
+}
+
+.event-card {
+  transition:
+    transform 0.15s ease,
+    box-shadow 0.15s ease;
+}
+
+.event-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.4);
 }
 </style>

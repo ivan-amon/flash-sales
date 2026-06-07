@@ -22,19 +22,16 @@ async function handleLogout(): Promise<void> {
 
       <div class="navbar-nav">
         <router-link class="nav-link" to="/events">Events</router-link>
+        <router-link v-if="isOrganizer" class="nav-link" to="/organizer/events/create">
+          Create Event
+        </router-link>
+        <router-link v-if="isOrganizer" class="nav-link" to="/organizer/dashboard">Dashboard</router-link>
         <router-link v-if="isUser" class="nav-link" to="/my-orders">My Orders</router-link>
       </div>
 
       <div class="ms-auto d-flex align-items-center">
         <template v-if="isAuthenticated">
           <span class="navbar-text me-3">{{ user?.email ?? organizer?.email }}</span>
-          <router-link
-            v-if="isOrganizer"
-            class="btn btn-outline-light btn-sm me-2"
-            to="/organizer/events/create"
-          >
-            Create Event
-          </router-link>
           <button type="button" class="btn btn-outline-light btn-sm" @click="handleLogout">
             Logout
           </button>

@@ -7,6 +7,15 @@ import type { OrderStatus, OrderWithTicket } from '../types/order'
 const orders = ref<OrderWithTicket[]>([])
 const isLoading = ref(true)
 const error = ref<string | null>(null)
+const selectedOrder = ref<OrderWithTicket | null>(null)
+
+function openTicket(order: OrderWithTicket): void {
+  selectedOrder.value = order
+}
+
+function closeTicket(): void {
+  selectedOrder.value = null
+}
 
 const now = ref(Date.now())
 const timer = setInterval(() => {
@@ -28,6 +37,14 @@ const dateFormatter = new Intl.DateTimeFormat(undefined, {
 })
 
 function formatDate(value: string): string {
+  return dateFormatter.format(new Date(value))
+}
+
+function formatEventDate(value: string | null): string {
+  if (!value) {
+    return 'TBA'
+  }
+
   return dateFormatter.format(new Date(value))
 }
 
@@ -114,8 +131,8 @@ onMounted(async () => {
             <button
               v-else-if="effectiveStatus(order) === 'confirmed'"
               type="button"
-              class="btn btn-success disabled"
-              aria-disabled="true"
+              class="btn btn-success"
+              @click="openTicket(order)"
             >
               View Ticket
             </button>
@@ -123,5 +140,51 @@ onMounted(async () => {
         </div>
       </div>
     </div>
+
+    <div
+      class="modal fade"
+      :class="{ show: selectedOrder }"
+      :style="{ display: selectedOrder ? 'block' : 'none' }"
+      tabindex="-1"
+      role="dialog"
+      :aria-hidden="!selectedOrder"
+      @click.self="closeTicket"
+    >
+      <div class="modal-dialog modal-dialog-centered" role="document">
+        <div v-if="selectedOrder" class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title">Digital Ticket</h5>
+            <button
+              type="button"
+              class="btn-close btn-close-white"
+              aria-label="Close"
+              @click="closeTicket"
+            ></button>
+          </div>
+          <div class="modal-body text-center">
+            <h4 class="mb-1">{{ selectedOrder.ticket.event.title }}</h4>
+            <p class="text-muted mb-3">
+              {{ formatEventDate(selectedOrder.ticket.event.sale_starts_at) }}
+            </p>
+            <img
+              :src="`https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=ticket-${selectedOrder.ticket.id}`"
+              alt="Ticket QR code"
+              width="150"
+              height="150"
+              class="mb-3"
+            />
+            <p class="mb-0">
+              <span class="text-muted">Ticket ID:</span>
+              <strong>#{{ selectedOrder.ticket.id }}</strong>
+            </p>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" @click="closeTicket">Close</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div v-if="selectedOrder" class="modal-backdrop fade show" @click="closeTicket"></div>
   </div>
 </template>

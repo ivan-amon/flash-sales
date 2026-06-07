@@ -113,7 +113,10 @@ async function reserveTicket(): Promise<void> {
               class="badge mb-4"
               :class="event.available_tickets > 0 ? 'bg-success' : 'bg-danger'"
             >
-              {{ event.available_tickets }} / {{ event.total_tickets }} tickets available
+              <template v-if="event.available_tickets > 0">
+                {{ event.available_tickets }} / {{ event.total_tickets }} tickets available
+              </template>
+              <template v-else>Sold Out!</template>
             </span>
 
             <div v-if="reserveError" class="alert alert-warning" role="alert">

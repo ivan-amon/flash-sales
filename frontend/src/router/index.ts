@@ -59,6 +59,12 @@ const router = createRouter({
       component: () => import('../views/organizer/OrganizerRegister.vue'),
     },
     {
+      path: '/organizer/dashboard',
+      name: 'organizer-dashboard',
+      component: () => import('../views/organizer/Dashboard.vue'),
+      meta: { requiresOrganizer: true },
+    },
+    {
       path: '/organizer/events/create',
       name: 'organizer-event-create',
       component: () => import('../views/organizer/EventCreate.vue'),

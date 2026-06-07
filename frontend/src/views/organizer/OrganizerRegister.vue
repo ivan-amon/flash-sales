@@ -64,7 +64,7 @@ async function handleSubmit(): Promise<void> {
               </div>
 
               <div class="mb-3">
-                <label for="phone" class="form-label">Phone <span class="text-muted">(optional)</span></label>
+                <label for="phone" class="form-label">Phone</label>
                 <input
                   id="phone"
                   v-model="phone"
