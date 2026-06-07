@@ -8,6 +8,16 @@ const router = createRouter({
       name: 'events',
       component: () => import('../views/EventList.vue'),
     },
+    {
+      path: '/login',
+      name: 'login',
+      component: () => import('../views/LoginForm.vue'),
+    },
+    {
+      path: '/register',
+      name: 'register',
+      component: () => import('../views/RegisterForm.vue'),
+    },
   ],
 })
 
