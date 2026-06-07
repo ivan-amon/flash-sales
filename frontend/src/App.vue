@@ -4,7 +4,7 @@ import logo from './assets/logo.svg'
 import { useAuth } from './composables/useAuth'
 
 const router = useRouter()
-const { user, isAuthenticated, logout } = useAuth()
+const { user, organizer, isAuthenticated, isOrganizer, logout } = useAuth()
 
 async function handleLogout(): Promise<void> {
   await logout()
@@ -20,9 +20,20 @@ async function handleLogout(): Promise<void> {
         Flash Sales
       </router-link>
 
+      <div class="navbar-nav">
+        <router-link class="nav-link" to="/events">Events</router-link>
+      </div>
+
       <div class="ms-auto d-flex align-items-center">
         <template v-if="isAuthenticated">
-          <span class="navbar-text me-3">{{ user?.email }}</span>
+          <span class="navbar-text me-3">{{ user?.email ?? organizer?.email }}</span>
+          <router-link
+            v-if="isOrganizer"
+            class="btn btn-outline-light btn-sm me-2"
+            to="/organizer/events/create"
+          >
+            Create Event
+          </router-link>
           <button type="button" class="btn btn-outline-light btn-sm" @click="handleLogout">
             Logout
           </button>

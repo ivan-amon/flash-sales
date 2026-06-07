@@ -1,37 +1,61 @@
 import { computed, readonly, ref } from 'vue'
 import { apiFetch, TOKEN_STORAGE_KEY } from '../utils/http'
-import type { User, ValidationErrors } from '../types/user'
+import type { Organizer, Role, User, ValidationErrors } from '../types/user'
 
 const USER_STORAGE_KEY = 'auth_user'
+const ROLE_STORAGE_KEY = 'auth_role'
 
-function loadStoredUser(): User | null {
-  const raw = localStorage.getItem(USER_STORAGE_KEY)
+function loadStored<T>(key: string): T | null {
+  const raw = localStorage.getItem(key)
   if (!raw) {
     return null
   }
 
   try {
-    return JSON.parse(raw) as User
+    return JSON.parse(raw) as T
   } catch {
     return null
   }
 }
 
 const token = ref<string | null>(localStorage.getItem(TOKEN_STORAGE_KEY))
-const user = ref<User | null>(loadStoredUser())
-const isAuthenticated = computed<boolean>(() => token.value !== null)
+const role = ref<Role | null>(localStorage.getItem(ROLE_STORAGE_KEY) as Role | null)
+const user = ref<User | null>(role.value === 'user' ? loadStored<User>(USER_STORAGE_KEY) : null)
+const organizer = ref<Organizer | null>(
+  role.value === 'organizer' ? loadStored<Organizer>(USER_STORAGE_KEY) : null,
+)
 
-function setSession(nextUser: User, nextToken: string): void {
+const isAuthenticated = computed<boolean>(() => token.value !== null)
+const isOrganizer = computed<boolean>(() => role.value === 'organizer')
+const isUser = computed<boolean>(() => role.value === 'user')
+
+function persistSession(principal: User | Organizer, nextToken: string, nextRole: Role): void {
   token.value = nextToken
-  user.value = nextUser
+  role.value = nextRole
   localStorage.setItem(TOKEN_STORAGE_KEY, nextToken)
-  localStorage.setItem(USER_STORAGE_KEY, JSON.stringify(nextUser))
+  localStorage.setItem(ROLE_STORAGE_KEY, nextRole)
+  localStorage.setItem(USER_STORAGE_KEY, JSON.stringify(principal))
+}
+
+function setUserSession(nextUser: User, nextToken: string): void {
+  user.value = nextUser
+  organizer.value = null
+  persistSession(nextUser, nextToken, 'user')
+}
+
+function setOrganizerSession(nextOrganizer: Organizer, nextToken: string): void {
+  organizer.value = nextOrganizer
+  user.value = null
+  persistSession(nextOrganizer, nextToken, 'organizer')
 }
 
 function clearSession(): void {
   token.value = null
+  role.value = null
   user.value = null
+  organizer.value = null
   localStorage.removeItem(TOKEN_STORAGE_KEY)
+  localStorage.removeItem(ROLE_STORAGE_KEY)
   localStorage.removeItem(USER_STORAGE_KEY)
 }
 
@@ -44,15 +68,27 @@ interface RegisterPayload {
   password_confirmation: string
 }
 
-async function login(email: string, password: string): Promise<AuthResult> {
-  const response = await apiFetch('/login', {
+interface OrganizerRegisterPayload {
+  official_name: string
+  phone: string | null
+  email: string
+  password: string
+  password_confirmation: string
+}
+
+async function postAuth<T>(
+  path: string,
+  body: object,
+  onSuccess: (data: T) => void,
+  fallbackMessage: string,
+): Promise<AuthResult> {
+  const response = await apiFetch(path, {
     method: 'POST',
-    body: JSON.stringify({ email, password }),
+    body: JSON.stringify(body),
   })
 
   if (response.ok) {
-    const data = (await response.json()) as { user: User; token: string }
-    setSession(data.user, data.token)
+    onSuccess((await response.json()) as T)
     return { ok: true }
   }
 
@@ -61,32 +97,52 @@ async function login(email: string, password: string): Promise<AuthResult> {
     return { ok: false, errors: data.errors }
   }
 
-  return { ok: false, errors: { email: ['Login failed. Please try again.'] } }
+  return { ok: false, errors: { email: [fallbackMessage] } }
+}
+
+async function login(email: string, password: string): Promise<AuthResult> {
+  return postAuth(
+    '/login',
+    { email, password },
+    (data: { user: User; token: string }) => setUserSession(data.user, data.token),
+    'Login failed. Please try again.',
+  )
 }
 
 async function register(payload: RegisterPayload): Promise<AuthResult> {
-  const response = await apiFetch('/register', {
-    method: 'POST',
-    body: JSON.stringify(payload),
-  })
+  return postAuth(
+    '/register',
+    payload,
+    (data: { user: User; token: string }) => setUserSession(data.user, data.token),
+    'Registration failed. Please try again.',
+  )
+}
 
-  if (response.ok) {
-    const data = (await response.json()) as { user: User; token: string }
-    setSession(data.user, data.token)
-    return { ok: true }
-  }
+async function organizerLogin(email: string, password: string): Promise<AuthResult> {
+  return postAuth(
+    '/organizer/login',
+    { email, password },
+    (data: { organizer: Organizer; token: string }) =>
+      setOrganizerSession(data.organizer, data.token),
+    'Login failed. Please try again.',
+  )
+}
 
-  if (response.status === 422) {
-    const data = (await response.json()) as { errors: ValidationErrors }
-    return { ok: false, errors: data.errors }
-  }
-
-  return { ok: false, errors: { email: ['Registration failed. Please try again.'] } }
+async function organizerRegister(payload: OrganizerRegisterPayload): Promise<AuthResult> {
+  return postAuth(
+    '/organizer/register',
+    payload,
+    (data: { organizer: Organizer; token: string }) =>
+      setOrganizerSession(data.organizer, data.token),
+    'Registration failed. Please try again.',
+  )
 }
 
 async function logout(): Promise<void> {
+  const path = role.value === 'organizer' ? '/organizer/logout' : '/logout'
+
   try {
-    await apiFetch('/logout', { method: 'POST' })
+    await apiFetch(path, { method: 'POST' })
   } catch {
     // Best-effort: the token may already be invalid; clear the session regardless.
   } finally {
@@ -97,9 +153,15 @@ async function logout(): Promise<void> {
 export function useAuth() {
   return {
     user: readonly(user),
+    organizer: readonly(organizer),
+    role: readonly(role),
     isAuthenticated,
+    isOrganizer,
+    isUser,
     login,
     register,
+    organizerLogin,
+    organizerRegister,
     logout,
   }
 }
