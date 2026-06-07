@@ -1,11 +1,18 @@
 <script setup lang="ts">
-import { onMounted, ref } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import { apiFetch } from '../utils/http'
 import type { EventItem } from '../types/event'
 
 const events = ref<EventItem[]>([])
 const isLoading = ref(true)
 const error = ref<string | null>(null)
+const searchQuery = ref('')
+
+const filteredEvents = computed(() =>
+  events.value.filter((event) =>
+    event.title.toLowerCase().includes(searchQuery.value.trim().toLowerCase()),
+  ),
+)
 
 const dateFormatter = new Intl.DateTimeFormat(undefined, {
   dateStyle: 'medium',
@@ -40,7 +47,18 @@ onMounted(async () => {
 
 <template>
   <div class="container py-4">
-    <h1 class="mb-4">Events</h1>
+    <div
+      class="d-flex flex-column flex-sm-row justify-content-sm-between align-items-sm-center gap-3 mb-4"
+    >
+      <h1 class="mb-0">Events</h1>
+      <input
+        v-model="searchQuery"
+        type="search"
+        class="form-control search-input"
+        placeholder="Search events…"
+        aria-label="Search events"
+      />
+    </div>
 
     <div v-if="isLoading" class="text-center py-5">
       <div class="spinner-border" role="status">
@@ -52,12 +70,12 @@ onMounted(async () => {
       {{ error }}
     </div>
 
-    <p v-else-if="events.length === 0" class="text-muted">
-      There are no events available right now.
+    <p v-else-if="filteredEvents.length === 0" class="text-muted">
+      {{ searchQuery ? 'No events match your search.' : 'There are no events available right now.' }}
     </p>
 
     <div v-else class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4">
-      <div v-for="event in events" :key="event.id" class="col">
+      <div v-for="event in filteredEvents" :key="event.id" class="col">
         <div class="card h-100 bg-secondary">
           <div class="card-body d-flex flex-column">
             <h5 class="card-title">{{ event.title }}</h5>
@@ -76,3 +94,11 @@ onMounted(async () => {
     </div>
   </div>
 </template>
+
+<style scoped>
+@media (min-width: 576px) {
+  .search-input {
+    max-width: 18rem;
+  }
+}
+</style>
