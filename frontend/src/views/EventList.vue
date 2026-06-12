@@ -8,11 +8,22 @@ const events = ref<EventItem[]>([])
 const isLoading = ref(true)
 const error = ref<string | null>(null)
 const searchQuery = ref('')
+const onlyAvailable = ref(false)
+
+const isFiltering = computed(() => searchQuery.value.trim() !== '' || onlyAvailable.value)
 
 const filteredEvents = computed(() =>
-  events.value.filter((event) =>
-    event.title.toLowerCase().includes(searchQuery.value.trim().toLowerCase()),
-  ),
+  events.value.filter((event) => {
+    const matchesTitle = event.title
+      .toLowerCase()
+      .includes(searchQuery.value.trim().toLowerCase())
+
+    if (!matchesTitle) {
+      return false
+    }
+
+    return !onlyAvailable.value || event.available_tickets > 0
+  }),
 )
 
 const dateFormatter = new Intl.DateTimeFormat(undefined, {
@@ -52,13 +63,27 @@ onMounted(async () => {
       class="d-flex flex-column flex-sm-row justify-content-sm-between align-items-sm-center gap-3 mb-4"
     >
       <h1 class="mb-0">Events</h1>
-      <input
-        v-model="searchQuery"
-        type="search"
-        class="form-control search-input"
-        placeholder="Search events…"
-        aria-label="Search events"
-      />
+      <div class="d-flex flex-column flex-sm-row align-items-sm-center gap-2 gap-sm-3">
+        <input
+          v-model="searchQuery"
+          type="search"
+          class="form-control search-input"
+          placeholder="Search events…"
+          aria-label="Search events"
+        />
+        <div class="form-check form-switch mb-0">
+          <input
+            id="only-available"
+            v-model="onlyAvailable"
+            class="form-check-input"
+            type="checkbox"
+            role="switch"
+          />
+          <label class="form-check-label text-nowrap" for="only-available">
+            Available only
+          </label>
+        </div>
+      </div>
     </div>
 
     <div v-if="isLoading" class="text-center py-5">
@@ -72,7 +97,7 @@ onMounted(async () => {
     </div>
 
     <p v-else-if="filteredEvents.length === 0" class="text-muted">
-      {{ searchQuery ? 'No events match your search.' : 'There are no events available right now.' }}
+      {{ isFiltering ? 'No events match your filters.' : 'There are no events available right now.' }}
     </p>
 
     <div v-else class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4">
