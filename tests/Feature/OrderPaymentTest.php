@@ -109,7 +109,7 @@ class OrderPaymentTest extends TestCase
 
         $this->assertDatabaseHas('orders', [
             'id' => $order->id,
-            'status' => OrderStatus::Cancelled->value,
+            'status' => OrderStatus::Expired->value,
         ]);
         $this->assertDatabaseHas('tickets', [
             'id' => $order->ticket_id,

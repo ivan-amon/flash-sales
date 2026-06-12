@@ -8,11 +8,13 @@ use App\Enums\TicketStatus;
 use App\Exceptions\Orders\OrderExpiredException;
 use App\Exceptions\Orders\OrderNotPendingException;
 use App\Models\Order;
-use Illuminate\Support\Facades\Redis;
 
 class ProcessOrderPaymentAction
 {
-    public function __construct(protected PaymentGateway $payment_gateway) {}
+    public function __construct(
+        protected PaymentGateway $payment_gateway,
+        protected ReleaseOrderTicketAction $releaseOrderTicket,
+    ) {}
 
     /**
      * Process the payment for an order and update its status accordingly.
@@ -31,33 +33,27 @@ class ProcessOrderPaymentAction
             throw new OrderNotPendingException("Order {$order->id} is not in pending status.");
         }
 
-        $ticket = $order->ticket;
-
         if ($order->expires_at < now()) {
-            $order->status = OrderStatus::Cancelled;
-            $order->save();
-            if ($ticket) {
-                $ticket->status = TicketStatus::Available;
-                $ticket->save();
-                $key = "available_tickets_{$ticket->event_id}";
-                Redis::incr($key);
-            }
+            ($this->releaseOrderTicket)($order, OrderStatus::Expired);
+
             throw new OrderExpiredException("Order {$order->id} has expired and has been cancelled.");
         }
 
         $payment_successful = $this->payment_gateway->processPayment($data['payment_method']);
 
-        $order->status = $payment_successful ? OrderStatus::Confirmed : OrderStatus::Cancelled;
+        if (! $payment_successful) {
+            ($this->releaseOrderTicket)($order, OrderStatus::Cancelled);
+
+            return $order;
+        }
+
+        $order->status = OrderStatus::Confirmed;
         $order->save();
 
+        $ticket = $order->ticket;
+
         if ($ticket) {
-            if ($payment_successful) {
-                $ticket->status = TicketStatus::Sold;
-            } else {
-                $ticket->status = TicketStatus::Available;
-                $key = "available_tickets_{$ticket->event_id}";
-                Redis::incr($key);
-            }
+            $ticket->status = TicketStatus::Sold;
             $ticket->save();
         }
 
