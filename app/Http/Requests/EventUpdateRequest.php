@@ -14,9 +14,11 @@ class EventUpdateRequest extends FormRequest
     public function rules(): array
     {
         $eventId = $this->route('event')?->id;
+
         return [
-            'title' => 'sometimes|required|string|unique:events,title,' . $eventId,
+            'title' => 'sometimes|required|string|unique:events,title,'.$eventId,
             'total_tickets' => 'sometimes|required|integer|min:1',
+            'city_id' => 'sometimes|required|integer|exists:cities,id',
             'sale_starts_at' => 'nullable|date',
         ];
     }

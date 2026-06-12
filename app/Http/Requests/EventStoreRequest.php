@@ -2,8 +2,8 @@
 
 namespace App\Http\Requests;
 
-use Illuminate\Foundation\Http\FormRequest;
 use App\Models\Event;
+use Illuminate\Foundation\Http\FormRequest;
 
 class EventStoreRequest extends FormRequest
 {
@@ -17,6 +17,7 @@ class EventStoreRequest extends FormRequest
         return [
             'title' => 'required|string|unique:events,title',
             'total_tickets' => 'required|integer|min:1',
+            'city_id' => 'required|integer|exists:cities,id',
             'sale_starts_at' => 'nullable|date',
         ];
     }

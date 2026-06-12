@@ -2,11 +2,12 @@
 
 namespace Tests\Feature;
 
+use App\Enums\TicketStatus;
+use App\Models\City;
 use App\Models\Event;
 use App\Models\Organizer;
-use App\Models\User;
 use App\Models\Ticket;
-use App\Enums\TicketStatus;
+use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Laravel\Sanctum\Sanctum;
 use Tests\TestCase;
@@ -24,10 +25,13 @@ class EventTest extends TestCase
         $organizer = Organizer::factory()->create();
         Sanctum::actingAs($organizer);
 
+        $city = City::factory()->create();
+
         $eventData = [
             'title' => 'Sample Event',
             'total_tickets' => 100,
             'organizer_id' => 1,
+            'city_id' => $city->id,
             'sale_starts_at' => now()->addDays(7),
         ];
 
@@ -38,9 +42,72 @@ class EventTest extends TestCase
             'title' => 'Sample Event',
             'total_tickets' => 100,
             'organizer_id' => 1,
+            'city_id' => $city->id,
             'sale_starts_at' => now()->addDays(7),
         ]);
         $this->assertDatabaseCount('tickets', 100);
+    }
+
+    // ==================================
+    // Event Location (City)
+    // ==================================
+    public function test_organizer_cannot_create_event_without_city(): void
+    {
+        $organizer = Organizer::factory()->create();
+        Sanctum::actingAs($organizer);
+
+        $response = $this->postJson('/api/events', [
+            'title' => 'Cityless Event',
+            'total_tickets' => 100,
+            'sale_starts_at' => now()->addDays(7),
+        ]);
+
+        $response->assertStatus(422);
+        $response->assertJsonValidationErrors('city_id');
+        $this->assertDatabaseMissing('events', ['title' => 'Cityless Event']);
+    }
+
+    public function test_organizer_cannot_create_event_with_nonexistent_city(): void
+    {
+        $organizer = Organizer::factory()->create();
+        Sanctum::actingAs($organizer);
+
+        $response = $this->postJson('/api/events', [
+            'title' => 'Bad City Event',
+            'total_tickets' => 100,
+            'city_id' => 999999,
+            'sale_starts_at' => now()->addDays(7),
+        ]);
+
+        $response->assertStatus(422);
+        $response->assertJsonValidationErrors('city_id');
+        $this->assertDatabaseMissing('events', ['title' => 'Bad City Event']);
+    }
+
+    public function test_event_show_nests_city_and_country(): void
+    {
+        $organizer = Organizer::factory()->create();
+        $city = City::factory()->create();
+        $event = Event::factory()->create([
+            'organizer_id' => $organizer->id,
+            'city_id' => $city->id,
+        ]);
+
+        $response = $this->getJson("/api/events/{$event->id}");
+
+        $response->assertStatus(200);
+        $response->assertJsonPath('city.id', $city->id);
+        $response->assertJsonPath('city.country.id', $city->country_id);
+        $response->assertJsonStructure([
+            'city' => [
+                'id',
+                'name',
+                'country' => [
+                    'id',
+                    'name',
+                ],
+            ],
+        ]);
     }
 
     public function test_organizer_can_update_own_event()

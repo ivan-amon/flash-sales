@@ -2,11 +2,11 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasManyThrough;
-use Illuminate\Database\Eloquent\Factories\HasFactory;
 
 class Event extends Model
 {
@@ -21,6 +21,7 @@ class Event extends Model
         'title',
         'total_tickets',
         'organizer_id',
+        'city_id',
         'sale_starts_at',
     ];
 
@@ -43,6 +44,14 @@ class Event extends Model
     public function organizer(): BelongsTo
     {
         return $this->belongsTo(Organizer::class);
+    }
+
+    /**
+     * Get the city where the event takes place.
+     */
+    public function city(): BelongsTo
+    {
+        return $this->belongsTo(City::class);
     }
 
     public function tickets(): HasMany

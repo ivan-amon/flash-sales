@@ -3,6 +3,7 @@
 namespace Database\Seeders;
 
 use App\Enums\TicketStatus;
+use App\Models\City;
 use App\Models\Event;
 use App\Models\Organizer;
 use App\Models\Ticket;
@@ -28,10 +29,13 @@ class DatabaseSeeder extends Seeder
             ]);
         }
 
+        $this->call(CountryCitySeeder::class);
+
         $event = Event::factory()->create([
-            'title' => 'Evento de prueba',
+            'title' => 'Test Event',
             'total_tickets' => 5,
             'organizer_id' => Organizer::factory()->create()->id,
+            'city_id' => City::where('name', 'Madrid')->value('id'),
             'sale_starts_at' => now()->subDay(),
         ]);
 

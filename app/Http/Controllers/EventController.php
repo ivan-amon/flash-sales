@@ -19,9 +19,10 @@ class EventController extends Controller
      */
     public function index(AvailableTicketsAction $availableTickets): JsonResponse
     {
-        $events = Event::all()->map(function (Event $event) use ($availableTickets) {
+        $events = Event::with('city.country')->get()->map(function (Event $event) use ($availableTickets) {
             $eventArray = $event->toArray();
             $eventArray['available_tickets'] = $availableTickets($event);
+
             return $eventArray;
         });
 
@@ -46,9 +47,10 @@ class EventController extends Controller
      */
     public function show(Event $event, AvailableTicketsAction $availableTickets): JsonResponse
     {
+        $event->load('city.country');
         $eventArray = $event->toArray();
         $eventArray['available_tickets'] = $availableTickets($event);
-    
+
         return response()->json($eventArray);
     }
 
@@ -60,6 +62,7 @@ class EventController extends Controller
         $validated = $request->validated(); // Validates the request data and if the user is an organizer
         Gate::authorize('update', $event); // Checks if the organizer is authorized to update the event
         $event->update($validated);
+
         return response()->json($event);
     }
 
@@ -68,8 +71,9 @@ class EventController extends Controller
      */
     public function destroy(Request $request, Event $event): JsonResponse
     {
-        Gate::authorize('delete', $event); // Checks if the organizer is authorized to delete the event   
+        Gate::authorize('delete', $event); // Checks if the organizer is authorized to delete the event
         $event->delete();
+
         return response()->json(null, 204);
     }
 }
