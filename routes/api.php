@@ -1,9 +1,11 @@
 <?php
 
 use App\Http\Controllers\AuthController;
+use App\Http\Controllers\CityController;
+use App\Http\Controllers\CountryController;
 use App\Http\Controllers\EventController;
-use App\Http\Controllers\OrganizerAuthController;
 use App\Http\Controllers\OrderController;
+use App\Http\Controllers\OrganizerAuthController;
 // use App\Http\Controllers\TicketController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
@@ -44,3 +46,7 @@ Route::middleware(['auth:sanctum'])->group(function () {
 // Public event routes
 Route::get('/events', [EventController::class, 'index']);
 Route::get('/events/{event}', [EventController::class, 'show']);
+
+// Public location routes
+Route::get('/countries', [CountryController::class, 'index']);
+Route::get('/cities', [CityController::class, 'index']);
