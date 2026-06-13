@@ -86,6 +86,25 @@ class EventTest extends TestCase
         $this->assertDatabaseMissing('events', ['title' => 'Bad City Event']);
     }
 
+    public function test_organizer_cannot_create_event_without_sale_starts_at(): void
+    {
+        $organizer = Organizer::factory()->create();
+        Sanctum::actingAs($organizer);
+
+        $city = City::factory()->create();
+
+        $response = $this->postJson('/api/events', [
+            'title' => 'No Sale Date Event',
+            'total_tickets' => 100,
+            'city_id' => $city->id,
+            'event_starts_at' => now()->addDays(30),
+        ]);
+
+        $response->assertStatus(422);
+        $response->assertJsonValidationErrors('sale_starts_at');
+        $this->assertDatabaseMissing('events', ['title' => 'No Sale Date Event']);
+    }
+
     // ==================================
     // Event Start Date
     // ==================================

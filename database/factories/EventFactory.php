@@ -21,7 +21,7 @@ class EventFactory extends Factory
             'total_tickets' => fake()->numberBetween(10, 500),
             'organizer_id' => Organizer::factory(),
             'city_id' => City::factory(),
-            'sale_starts_at' => fake()->optional()->dateTimeBetween('-1 month', '+2 months'),
+            'sale_starts_at' => fake()->dateTimeBetween('-1 month', '+2 months'),
             'event_starts_at' => fake()->dateTimeBetween('+2 months', '+6 months'),
         ];
     }

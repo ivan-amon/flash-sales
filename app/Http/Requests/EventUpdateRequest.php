@@ -19,7 +19,7 @@ class EventUpdateRequest extends FormRequest
             'title' => 'sometimes|required|string|unique:events,title,'.$eventId,
             'total_tickets' => 'sometimes|required|integer|min:1',
             'city_id' => 'sometimes|required|integer|exists:cities,id',
-            'sale_starts_at' => 'nullable|date',
+            'sale_starts_at' => 'sometimes|required|date',
             'event_starts_at' => 'sometimes|required|date',
         ];
     }
