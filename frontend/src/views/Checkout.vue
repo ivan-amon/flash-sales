@@ -42,12 +42,7 @@ onMounted(async () => {
   try {
     const response = await apiFetch(`/orders/${id}`)
 
-    if (response.status === 403) {
-      error.value = "This order isn't yours."
-      return
-    }
-
-    if (response.status === 404) {
+    if (response.status === 404 || response.status === 403) {
       error.value = 'Order not found.'
       return
     }

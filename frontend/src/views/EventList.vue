@@ -9,8 +9,17 @@ const isLoading = ref(true)
 const error = ref<string | null>(null)
 const searchQuery = ref('')
 const onlyAvailable = ref(false)
+const selectedCity = ref('')
 
-const isFiltering = computed(() => searchQuery.value.trim() !== '' || onlyAvailable.value)
+const cities = computed(() =>
+  [...new Set(events.value.map((event) => event.city?.name).filter((name): name is string => !!name))].sort(
+    (a, b) => a.localeCompare(b),
+  ),
+)
+
+const isFiltering = computed(
+  () => searchQuery.value.trim() !== '' || onlyAvailable.value || selectedCity.value !== '',
+)
 
 const filteredEvents = computed(() =>
   events.value.filter((event) => {
@@ -22,6 +31,10 @@ const filteredEvents = computed(() =>
       return false
     }
 
+    if (selectedCity.value !== '' && event.city?.name !== selectedCity.value) {
+      return false
+    }
+
     return !onlyAvailable.value || event.available_tickets > 0
   }),
 )
@@ -30,14 +43,6 @@ const dateFormatter = new Intl.DateTimeFormat(undefined, {
   dateStyle: 'medium',
   timeStyle: 'short',
 })
-
-function formatSaleStart(value: string | null): string {
-  if (!value) {
-    return 'TBA'
-  }
-
-  return dateFormatter.format(new Date(value))
-}
 
 onMounted(async () => {
   try {
@@ -71,6 +76,14 @@ onMounted(async () => {
           placeholder="Search events…"
           aria-label="Search events"
         />
+        <select
+          v-model="selectedCity"
+          class="form-select city-select"
+          aria-label="Filter by city"
+        >
+          <option value="">All cities</option>
+          <option v-for="city in cities" :key="city" :value="city">{{ city }}</option>
+        </select>
         <div class="form-check form-switch mb-0">
           <input
             id="only-available"
@@ -106,19 +119,32 @@ onMounted(async () => {
           :to="{ name: 'event-detail', params: { id: event.id } }"
           class="card event-card h-100 bg-secondary text-reset text-decoration-none"
         >
-          <div class="card-body d-flex flex-column">
-            <h5 class="card-title">{{ event.title }}</h5>
-            <p class="card-text text-light mb-2">
-              Sale starts: {{ formatSaleStart(event.sale_starts_at) }}
-            </p>
+          <div class="card-body d-flex flex-column position-relative">
             <span
-              class="badge mt-auto align-self-start"
+              class="badge position-absolute top-0 end-0 m-3"
               :class="event.available_tickets > 0 ? 'bg-success' : 'bg-danger'"
             >
               <template v-if="event.available_tickets > 0">
                 {{ event.available_tickets }} / {{ event.total_tickets }} tickets available
               </template>
               <template v-else>Sold Out!</template>
+            </span>
+            <h5 class="card-title pe-5">{{ event.title }}</h5>
+            <p v-if="event.city" class="card-text text-light mb-1">
+              <i class="bi bi-geo-alt me-1"></i>{{ event.city.name
+              }}<template v-if="event.city.country">, {{ event.city.country.name }}</template>
+            </p>
+            <p class="card-text text-light mb-2">
+              <i class="bi bi-clock me-1"></i>{{ dateFormatter.format(new Date(event.event_starts_at)) }}
+            </p>
+            <span
+              v-if="event.available_tickets > 0"
+              class="btn btn-primary w-100 mt-2"
+            >
+              Reserve Ticket
+            </span>
+            <span v-else class="btn btn-primary w-100 mt-2">
+              More Information
             </span>
           </div>
         </RouterLink>
@@ -131,6 +157,10 @@ onMounted(async () => {
 @media (min-width: 576px) {
   .search-input {
     max-width: 18rem;
+  }
+
+  .city-select {
+    max-width: 12rem;
   }
 }
 

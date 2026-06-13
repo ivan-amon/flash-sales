@@ -106,7 +106,7 @@ function onDeleted(id: number): void {
               </button>
               <button
                 type="button"
-                class="btn btn-sm btn-outline-danger"
+                class="btn btn-sm btn-outline-dange"
                 aria-label="Delete event"
                 title="Delete"
                 @click="deletingEvent = event"

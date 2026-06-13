@@ -1,3 +1,5 @@
+export const MIN_EVENT_LEAD_MINUTES = 60
+
 function pad(value: number): string {
   return String(value).padStart(2, '0')
 }
