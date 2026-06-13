@@ -20,6 +20,7 @@ class EventStoreRequest extends FormRequest
             'city_id' => 'required|integer|exists:cities,id',
             'sale_starts_at' => 'required|date',
             'event_starts_at' => 'required|date',
+            'cover_image' => 'nullable|image|mimes:jpeg,png,webp|max:2048',
         ];
     }
 }

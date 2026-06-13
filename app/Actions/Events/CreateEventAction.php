@@ -13,7 +13,7 @@ class CreateEventAction
     /**
      * Creates a new event and generates the associated tickets.
      *
-     * @param  array  $data  Must contain 'title', 'total_tickets', 'organizer_id', 'city_id', 'sale_starts_at', and 'event_starts_at'.
+     * @param  array  $data  Must contain 'title', 'total_tickets', 'organizer_id', 'city_id', 'sale_starts_at', and 'event_starts_at'. May contain 'cover_image_path'.
      */
     public function __invoke($data): Event
     {
@@ -27,6 +27,7 @@ class CreateEventAction
                 'city_id' => $data['city_id'],
                 'sale_starts_at' => $data['sale_starts_at'],
                 'event_starts_at' => $data['event_starts_at'],
+                'cover_image_path' => $data['cover_image_path'] ?? null,
             ]);
 
             $tickets = [];

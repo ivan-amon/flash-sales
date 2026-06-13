@@ -9,6 +9,8 @@ use App\Models\Organizer;
 use App\Models\Ticket;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Storage;
 use Laravel\Sanctum\Sanctum;
 use Tests\TestCase;
 
@@ -325,5 +327,120 @@ class EventTest extends TestCase
         $response = $this->getJson('/api/events/999999');
 
         $response->assertStatus(404);
+    }
+
+    // ==================================
+    // Cover Image
+    // ==================================
+    public function test_organizer_can_create_event_with_cover_image(): void
+    {
+        /** @var \Illuminate\Filesystem\FilesystemAdapter $disk */
+        $disk = Storage::fake('public');
+
+        $organizer = Organizer::factory()->create();
+        Sanctum::actingAs($organizer);
+        $city = City::factory()->create();
+
+        $response = $this->postJson('/api/events', [
+            'title' => 'Event With Cover',
+            'total_tickets' => 50,
+            'city_id' => $city->id,
+            'sale_starts_at' => now()->addDays(7),
+            'event_starts_at' => now()->addDays(30),
+            'cover_image' => UploadedFile::fake()->image('cover.jpg'),
+        ]);
+
+        $response->assertStatus(201);
+        $path = $response->json('cover_image_path');
+        $this->assertNotNull($path);
+        $disk->assertExists($path);
+        $response->assertJsonPath('cover_image_url', asset('storage/'.$path));
+    }
+
+    public function test_event_cover_image_must_be_a_valid_image(): void
+    {
+        Storage::fake('public');
+
+        $organizer = Organizer::factory()->create();
+        Sanctum::actingAs($organizer);
+        $city = City::factory()->create();
+
+        $response = $this->postJson('/api/events', [
+            'title' => 'Bad Cover Event',
+            'total_tickets' => 50,
+            'city_id' => $city->id,
+            'sale_starts_at' => now()->addDays(7),
+            'event_starts_at' => now()->addDays(30),
+            'cover_image' => UploadedFile::fake()->create('document.pdf', 100, 'application/pdf'),
+        ]);
+
+        $response->assertStatus(422);
+        $response->assertJsonValidationErrors('cover_image');
+    }
+
+    public function test_event_cover_image_cannot_exceed_max_size(): void
+    {
+        Storage::fake('public');
+
+        $organizer = Organizer::factory()->create();
+        Sanctum::actingAs($organizer);
+        $city = City::factory()->create();
+
+        $response = $this->postJson('/api/events', [
+            'title' => 'Oversized Cover Event',
+            'total_tickets' => 50,
+            'city_id' => $city->id,
+            'sale_starts_at' => now()->addDays(7),
+            'event_starts_at' => now()->addDays(30),
+            'cover_image' => UploadedFile::fake()->image('huge.jpg')->size(3000),
+        ]);
+
+        $response->assertStatus(422);
+        $response->assertJsonValidationErrors('cover_image');
+    }
+
+    public function test_updating_cover_image_deletes_the_old_file(): void
+    {
+        /** @var \Illuminate\Filesystem\FilesystemAdapter $disk */
+        $disk = Storage::fake('public');
+
+        $organizer = Organizer::factory()->create();
+        $oldPath = UploadedFile::fake()->image('old.jpg')->store('events', 'public');
+        $event = Event::factory()->create([
+            'organizer_id' => $organizer->id,
+            'cover_image_path' => $oldPath,
+        ]);
+
+        Sanctum::actingAs($organizer);
+
+        $response = $this->putJson("/api/events/{$event->id}", [
+            'cover_image' => UploadedFile::fake()->image('new.jpg'),
+        ]);
+
+        $response->assertStatus(200);
+        $disk->assertMissing($oldPath);
+        $newPath = $response->json('cover_image_path');
+        $this->assertNotEquals($oldPath, $newPath);
+        $disk->assertExists($newPath);
+    }
+
+    public function test_deleting_event_removes_its_cover_image(): void
+    {
+        /** @var \Illuminate\Filesystem\FilesystemAdapter $disk */
+        $disk = Storage::fake('public');
+
+        $organizer = Organizer::factory()->create();
+        $path = UploadedFile::fake()->image('cover.jpg')->store('events', 'public');
+        $event = Event::factory()->create([
+            'organizer_id' => $organizer->id,
+            'cover_image_path' => $path,
+        ]);
+
+        Sanctum::actingAs($organizer);
+
+        $response = $this->deleteJson("/api/events/{$event->id}");
+
+        $response->assertStatus(204);
+        $disk->assertMissing($path);
     }
 }

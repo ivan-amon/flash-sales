@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -24,6 +25,16 @@ class Event extends Model
         'city_id',
         'sale_starts_at',
         'event_starts_at',
+        'cover_image_path',
+    ];
+
+    /**
+     * The accessors to append to the model's array form.
+     *
+     * @var list<string>
+     */
+    protected $appends = [
+        'cover_image_url',
     ];
 
     /**
@@ -38,6 +49,20 @@ class Event extends Model
             'sale_starts_at' => 'datetime',
             'event_starts_at' => 'datetime',
         ];
+    }
+
+    /**
+     * Get the publicly accessible URL for the event's cover image.
+     *
+     * @return Attribute<string|null, never>
+     */
+    protected function coverImageUrl(): Attribute
+    {
+        return Attribute::make(
+            get: fn (): ?string => $this->cover_image_path
+                ? asset('storage/'.$this->cover_image_path)
+                : null,
+        );
     }
 
     /**

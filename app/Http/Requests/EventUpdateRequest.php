@@ -21,6 +21,7 @@ class EventUpdateRequest extends FormRequest
             'city_id' => 'sometimes|required|integer|exists:cities,id',
             'sale_starts_at' => 'sometimes|required|date',
             'event_starts_at' => 'sometimes|required|date',
+            'cover_image' => 'sometimes|image|mimes:jpeg,png,webp|max:2048',
         ];
     }
 }

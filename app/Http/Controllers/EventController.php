@@ -11,6 +11,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Facades\Storage;
 
 class EventController extends Controller
 {
@@ -35,6 +36,11 @@ class EventController extends Controller
     public function store(EventStoreRequest $request, CreateEventAction $createEvent): JsonResponse
     {
         $validated = $request->validated(); // Validates the request data and if the user is an organizer
+        unset($validated['cover_image']);
+
+        if ($request->hasFile('cover_image')) {
+            $validated['cover_image_path'] = $request->file('cover_image')->store('events', 'public');
+        }
 
         $data = array_merge($validated, ['organizer_id' => $request->user()->id]);
         $event = $createEvent($data);
@@ -61,6 +67,16 @@ class EventController extends Controller
     {
         $validated = $request->validated(); // Validates the request data and if the user is an organizer
         Gate::authorize('update', $event); // Checks if the organizer is authorized to update the event
+        unset($validated['cover_image']);
+
+        if ($request->hasFile('cover_image')) {
+            if ($event->cover_image_path) {
+                Storage::disk('public')->delete($event->cover_image_path);
+            }
+
+            $validated['cover_image_path'] = $request->file('cover_image')->store('events', 'public');
+        }
+
         $event->update($validated);
 
         return response()->json($event);
@@ -72,6 +88,11 @@ class EventController extends Controller
     public function destroy(Request $request, Event $event): JsonResponse
     {
         Gate::authorize('delete', $event); // Checks if the organizer is authorized to delete the event
+
+        if ($event->cover_image_path) {
+            Storage::disk('public')->delete($event->cover_image_path);
+        }
+
         $event->delete();
 
         return response()->json(null, 204);
