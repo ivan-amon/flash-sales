@@ -19,6 +19,7 @@ class EventStoreRequest extends FormRequest
             'total_tickets' => 'required|integer|min:1',
             'city_id' => 'required|integer|exists:cities,id',
             'sale_starts_at' => 'nullable|date',
+            'event_starts_at' => 'required|date',
         ];
     }
 }

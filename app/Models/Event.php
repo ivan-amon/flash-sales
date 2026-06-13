@@ -23,6 +23,7 @@ class Event extends Model
         'organizer_id',
         'city_id',
         'sale_starts_at',
+        'event_starts_at',
     ];
 
     /**
@@ -35,6 +36,7 @@ class Event extends Model
         return [
             'total_tickets' => 'integer',
             'sale_starts_at' => 'datetime',
+            'event_starts_at' => 'datetime',
         ];
     }
 

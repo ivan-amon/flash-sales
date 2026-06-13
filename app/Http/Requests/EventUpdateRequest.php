@@ -20,6 +20,7 @@ class EventUpdateRequest extends FormRequest
             'total_tickets' => 'sometimes|required|integer|min:1',
             'city_id' => 'sometimes|required|integer|exists:cities,id',
             'sale_starts_at' => 'nullable|date',
+            'event_starts_at' => 'sometimes|required|date',
         ];
     }
 }

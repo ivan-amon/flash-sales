@@ -33,6 +33,7 @@ class EventTest extends TestCase
             'organizer_id' => 1,
             'city_id' => $city->id,
             'sale_starts_at' => now()->addDays(7),
+            'event_starts_at' => now()->addDays(30),
         ];
 
         $response = $this->post('/api/events', $eventData);
@@ -44,6 +45,7 @@ class EventTest extends TestCase
             'organizer_id' => 1,
             'city_id' => $city->id,
             'sale_starts_at' => now()->addDays(7),
+            'event_starts_at' => now()->addDays(30),
         ]);
         $this->assertDatabaseCount('tickets', 100);
     }
@@ -82,6 +84,28 @@ class EventTest extends TestCase
         $response->assertStatus(422);
         $response->assertJsonValidationErrors('city_id');
         $this->assertDatabaseMissing('events', ['title' => 'Bad City Event']);
+    }
+
+    // ==================================
+    // Event Start Date
+    // ==================================
+    public function test_organizer_cannot_create_event_without_event_starts_at(): void
+    {
+        $organizer = Organizer::factory()->create();
+        Sanctum::actingAs($organizer);
+
+        $city = City::factory()->create();
+
+        $response = $this->postJson('/api/events', [
+            'title' => 'Dateless Event',
+            'total_tickets' => 100,
+            'city_id' => $city->id,
+            'sale_starts_at' => now()->addDays(7),
+        ]);
+
+        $response->assertStatus(422);
+        $response->assertJsonValidationErrors('event_starts_at');
+        $this->assertDatabaseMissing('events', ['title' => 'Dateless Event']);
     }
 
     public function test_event_show_nests_city_and_country(): void
