@@ -10,6 +10,18 @@ const error = ref<string | null>(null)
 const searchQuery = ref('')
 const onlyAvailable = ref(false)
 const selectedCity = ref('')
+const isFilterPanelOpen = ref(false)
+
+type DatePreset = '' | 'today' | 'weekend' | 'week' | 'month'
+
+const datePresets: { value: Exclude<DatePreset, ''>; label: string }[] = [
+  { value: 'today', label: 'Today' },
+  { value: 'weekend', label: 'This weekend' },
+  { value: 'week', label: 'This week' },
+  { value: 'month', label: 'This month' },
+]
+
+const selectedDatePreset = ref<DatePreset>('')
 
 const cities = computed(() =>
   [...new Set(events.value.map((event) => event.city?.name).filter((name): name is string => !!name))].sort(
@@ -17,9 +29,70 @@ const cities = computed(() =>
   ),
 )
 
-const isFiltering = computed(
-  () => searchQuery.value.trim() !== '' || onlyAvailable.value || selectedCity.value !== '',
+const startOfDay = (date: Date): Date => {
+  const result = new Date(date)
+  result.setHours(0, 0, 0, 0)
+  return result
+}
+
+const endOfDay = (date: Date): Date => {
+  const result = new Date(date)
+  result.setHours(23, 59, 59, 999)
+  return result
+}
+
+const addDays = (date: Date, days: number): Date => {
+  const result = new Date(date)
+  result.setDate(result.getDate() + days)
+  return result
+}
+
+const dateRange = computed<{ start: Date | null; end: Date | null }>(() => {
+  if (selectedDatePreset.value === '') {
+    return { start: null, end: null }
+  }
+
+  const now = new Date()
+  const dayOfWeek = now.getDay()
+
+  switch (selectedDatePreset.value) {
+    case 'today':
+      return { start: startOfDay(now), end: endOfDay(now) }
+    case 'weekend': {
+      if (dayOfWeek === 0) {
+        return { start: startOfDay(now), end: endOfDay(now) }
+      }
+      const saturday = addDays(now, (6 - dayOfWeek + 7) % 7)
+      return { start: startOfDay(saturday), end: endOfDay(addDays(saturday, 1)) }
+    }
+    case 'week':
+      return { start: startOfDay(now), end: endOfDay(addDays(now, (7 - dayOfWeek) % 7)) }
+    case 'month':
+      return {
+        start: startOfDay(now),
+        end: endOfDay(new Date(now.getFullYear(), now.getMonth() + 1, 0)),
+      }
+  }
+
+  return { start: null, end: null }
+})
+
+const activeFilterCount = computed(
+  () =>
+    (onlyAvailable.value ? 1 : 0) +
+    (selectedCity.value !== '' ? 1 : 0) +
+    (selectedDatePreset.value !== '' ? 1 : 0),
 )
+
+const isFiltering = computed(
+  () => searchQuery.value.trim() !== '' || activeFilterCount.value > 0,
+)
+
+const clearFilters = (): void => {
+  onlyAvailable.value = false
+  selectedCity.value = ''
+  selectedDatePreset.value = ''
+}
 
 const filteredEvents = computed(() =>
   events.value.filter((event) => {
@@ -33,6 +106,17 @@ const filteredEvents = computed(() =>
 
     if (selectedCity.value !== '' && event.city?.name !== selectedCity.value) {
       return false
+    }
+
+    const { start, end } = dateRange.value
+    if (start || end) {
+      const eventDate = new Date(event.event_starts_at)
+      if (start && eventDate < start) {
+        return false
+      }
+      if (end && eventDate > end) {
+        return false
+      }
     }
 
     return !onlyAvailable.value || event.available_tickets > 0
@@ -65,25 +149,64 @@ onMounted(async () => {
 <template>
   <div class="container py-4">
     <div
-      class="d-flex flex-column flex-sm-row justify-content-sm-between align-items-sm-center gap-3 mb-4"
+      class="d-flex flex-column flex-sm-row justify-content-sm-between align-items-sm-center gap-3 mb-3"
     >
       <h1 class="mb-0">Events</h1>
-      <div class="d-flex flex-column flex-sm-row align-items-sm-center gap-2 gap-sm-3">
+      <div class="d-flex align-items-center gap-2 filter-bar">
         <input
           v-model="searchQuery"
           type="search"
-          class="form-control search-input"
+          class="form-control"
           placeholder="Search events…"
           aria-label="Search events"
         />
-        <select
-          v-model="selectedCity"
-          class="form-select city-select"
-          aria-label="Filter by city"
+        <button
+          type="button"
+          class="btn btn-primary d-flex align-items-center position-relative"
+          :class="{ active: isFilterPanelOpen }"
+          aria-label="Toggle filters"
+          :aria-expanded="isFilterPanelOpen"
+          @click="isFilterPanelOpen = !isFilterPanelOpen"
         >
-          <option value="">All cities</option>
-          <option v-for="city in cities" :key="city" :value="city">{{ city }}</option>
-        </select>
+          <i class="bi bi-sliders"></i>
+          <span
+            v-if="activeFilterCount > 0"
+            class="position-absolute top-0 start-100 translate-middle p-1 bg-light border border-primary rounded-circle"
+          >
+            <span class="visually-hidden">filters active</span>
+          </span>
+        </button>
+      </div>
+    </div>
+
+    <div v-if="isFilterPanelOpen" class="card bg-secondary mb-4">
+      <div class="card-body d-flex flex-column flex-md-row align-items-md-center gap-3">
+        <div class="d-flex align-items-center gap-2 grow">
+          <label class="form-label mb-0" for="filter-city">City</label>
+          <select
+            id="filter-city"
+            v-model="selectedCity"
+            class="form-select"
+            aria-label="Filter by city"
+          >
+            <option value="">All cities</option>
+            <option v-for="city in cities" :key="city" :value="city">{{ city }}</option>
+          </select>
+        </div>
+        <div class="d-flex align-items-center gap-2 grow">
+          <label class="form-label mb-0 text-nowrap" for="filter-date">Event date</label>
+          <select
+            id="filter-date"
+            v-model="selectedDatePreset"
+            class="form-select"
+            aria-label="Filter by event date"
+          >
+            <option value="">Any date</option>
+            <option v-for="preset in datePresets" :key="preset.value" :value="preset.value">
+              {{ preset.label }}
+            </option>
+          </select>
+        </div>
         <div class="form-check form-switch mb-0">
           <input
             id="only-available"
@@ -96,6 +219,14 @@ onMounted(async () => {
             Available only
           </label>
         </div>
+        <button
+          type="button"
+          class="btn btn-outline-light ms-md-auto"
+          :disabled="activeFilterCount === 0"
+          @click="clearFilters"
+        >
+          Clear filters
+        </button>
       </div>
     </div>
 
@@ -154,13 +285,23 @@ onMounted(async () => {
 </template>
 
 <style scoped>
+.filter-bar {
+  width: 100%;
+}
+
+.filter-bar .form-control {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
 @media (min-width: 576px) {
-  .search-input {
-    max-width: 18rem;
+  .filter-bar {
+    width: auto;
   }
 
-  .city-select {
-    max-width: 12rem;
+  .filter-bar .form-control {
+    width: 18rem;
+    flex: 0 0 auto;
   }
 }
 
