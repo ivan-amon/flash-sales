@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
-import { apiFetch } from '../../utils/http'
-import type { EventItem } from '../../types/event'
+import { apiFetch } from '@/shared/api/http'
+import type { EventItem } from '@/features/events/types/event'
 
 const props = defineProps<{ event: EventItem }>()
 const emit = defineEmits<{

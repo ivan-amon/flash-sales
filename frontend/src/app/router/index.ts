@@ -1,5 +1,5 @@
 import { createRouter, createWebHistory } from 'vue-router'
-import { useAuth } from '../composables/useAuth'
+import { useAuth } from '@/features/auth/composables/useAuth'
 
 const router = createRouter({
   history: createWebHistory(),
@@ -7,7 +7,7 @@ const router = createRouter({
     {
       path: '/',
       name: 'landing',
-      component: () => import('../views/Landing.vue'),
+      component: () => import('@/features/landing/views/Landing.vue'),
       beforeEnter: () => {
         const { isAuthenticated } = useAuth()
 
@@ -19,55 +19,55 @@ const router = createRouter({
     {
       path: '/events',
       name: 'events',
-      component: () => import('../views/EventList.vue'),
+      component: () => import('@/features/events/views/EventList.vue'),
     },
     {
       path: '/events/:id',
       name: 'event-detail',
-      component: () => import('../views/EventDetail.vue'),
+      component: () => import('@/features/events/views/EventDetail.vue'),
     },
     {
       path: '/orders/:id/checkout',
       name: 'order-checkout',
-      component: () => import('../views/Checkout.vue'),
+      component: () => import('@/features/orders/views/Checkout.vue'),
       meta: { requiresUser: true },
     },
     {
       path: '/my-orders',
       name: 'my-orders',
-      component: () => import('../views/MyOrders.vue'),
+      component: () => import('@/features/orders/views/MyOrders.vue'),
       meta: { requiresUser: true },
     },
     {
       path: '/login',
       name: 'login',
-      component: () => import('../views/LoginForm.vue'),
+      component: () => import('@/features/auth/views/LoginForm.vue'),
     },
     {
       path: '/register',
       name: 'register',
-      component: () => import('../views/RegisterForm.vue'),
+      component: () => import('@/features/auth/views/RegisterForm.vue'),
     },
     {
       path: '/organizer/login',
       name: 'organizer-login',
-      component: () => import('../views/organizer/OrganizerLogin.vue'),
+      component: () => import('@/features/organizer/views/OrganizerLogin.vue'),
     },
     {
       path: '/organizer/register',
       name: 'organizer-register',
-      component: () => import('../views/organizer/OrganizerRegister.vue'),
+      component: () => import('@/features/organizer/views/OrganizerRegister.vue'),
     },
     {
       path: '/organizer/dashboard',
       name: 'organizer-dashboard',
-      component: () => import('../views/organizer/Dashboard.vue'),
+      component: () => import('@/features/organizer/views/Dashboard.vue'),
       meta: { requiresOrganizer: true },
     },
     {
       path: '/organizer/events/create',
       name: 'organizer-event-create',
-      component: () => import('../views/organizer/EventCreate.vue'),
+      component: () => import('@/features/organizer/views/EventCreate.vue'),
       meta: { requiresOrganizer: true },
     },
   ],

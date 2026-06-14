@@ -1,11 +1,11 @@
 <script setup lang="ts">
 import { onMounted, ref } from 'vue'
 import { RouterLink } from 'vue-router'
-import { apiFetch } from '../../utils/http'
-import { useAuth } from '../../composables/useAuth'
-import type { EventItem } from '../../types/event'
-import EventEditModal from '../../components/organizer/EventEditModal.vue'
-import EventDeleteModal from '../../components/organizer/EventDeleteModal.vue'
+import { apiFetch } from '@/shared/api/http'
+import { useAuth } from '@/features/auth/composables/useAuth'
+import type { EventItem } from '@/features/events/types/event'
+import EventEditModal from '@/features/organizer/components/EventEditModal.vue'
+import EventDeleteModal from '@/features/organizer/components/EventDeleteModal.vue'
 
 const { organizer } = useAuth()
 

@@ -1,10 +1,10 @@
 <script setup lang="ts">
 import { onMounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { apiFetch } from '../utils/http'
-import { useAuth } from '../composables/useAuth'
-import type { EventItem } from '../types/event'
-import type { Order } from '../types/order'
+import { apiFetch } from '@/shared/api/http'
+import { useAuth } from '@/features/auth/composables/useAuth'
+import type { EventItem } from '@/features/events/types/event'
+import type { Order } from '@/features/orders/types/order'
 
 const route = useRoute()
 const router = useRouter()

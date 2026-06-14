@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
-import logo from './assets/logo.svg'
-import { useAuth } from './composables/useAuth'
+import logo from '@/assets/logo.svg'
+import { useAuth } from '@/features/auth/composables/useAuth'
 
 const router = useRouter()
 const { user, organizer, isAuthenticated, isOrganizer, isUser, logout } = useAuth()

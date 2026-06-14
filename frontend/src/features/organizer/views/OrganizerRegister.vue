@@ -1,13 +1,14 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
-import { useAuth } from '../composables/useAuth'
-import type { ValidationErrors } from '../types/user'
+import { useAuth } from '@/features/auth/composables/useAuth'
+import type { ValidationErrors } from '@/features/auth/types/user'
 
 const router = useRouter()
-const { register } = useAuth()
+const { organizerRegister } = useAuth()
 
-const name = ref('')
+const officialName = ref('')
+const phone = ref('')
 const email = ref('')
 const password = ref('')
 const passwordConfirmation = ref('')
@@ -19,15 +20,16 @@ async function handleSubmit(): Promise<void> {
   errors.value = {}
 
   try {
-    const result = await register({
-      name: name.value,
+    const result = await organizerRegister({
+      official_name: officialName.value,
+      phone: phone.value || null,
       email: email.value,
       password: password.value,
       password_confirmation: passwordConfirmation.value,
     })
 
     if (result.ok) {
-      await router.push('/')
+      await router.push('/organizer/events/create')
     } else {
       errors.value = result.errors
     }
@@ -43,21 +45,36 @@ async function handleSubmit(): Promise<void> {
       <div class="col-md-6 col-lg-5">
         <div class="card">
           <div class="card-body">
-            <h1 class="card-title h4 mb-4">Create account</h1>
+            <h1 class="card-title h4 mb-4">Create organizer account</h1>
 
             <form novalidate @submit.prevent="handleSubmit">
               <div class="mb-3">
-                <label for="name" class="form-label">Name</label>
+                <label for="official_name" class="form-label">Official name</label>
                 <input
-                  id="name"
-                  v-model="name"
+                  id="official_name"
+                  v-model="officialName"
                   type="text"
                   class="form-control"
-                  :class="{ 'is-invalid': errors.name }"
-                  autocomplete="name"
+                  :class="{ 'is-invalid': errors.official_name }"
+                  autocomplete="organization"
                 />
-                <div v-if="errors.name" class="invalid-feedback">
-                  {{ errors.name[0] }}
+                <div v-if="errors.official_name" class="invalid-feedback">
+                  {{ errors.official_name[0] }}
+                </div>
+              </div>
+
+              <div class="mb-3">
+                <label for="phone" class="form-label">Phone</label>
+                <input
+                  id="phone"
+                  v-model="phone"
+                  type="tel"
+                  class="form-control"
+                  :class="{ 'is-invalid': errors.phone }"
+                  autocomplete="tel"
+                />
+                <div v-if="errors.phone" class="invalid-feedback">
+                  {{ errors.phone[0] }}
                 </div>
               </div>
 
@@ -118,8 +135,8 @@ async function handleSubmit(): Promise<void> {
             </form>
 
             <p class="text-center text-muted mt-3 mb-0">
-              Already have an account?
-              <router-link to="/login">Sign in</router-link>
+              Already have an organizer account?
+              <router-link to="/organizer/login">Sign in</router-link>
             </p>
           </div>
         </div>

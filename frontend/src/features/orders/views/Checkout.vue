@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import { computed, onMounted, onUnmounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { apiFetch } from '../utils/http'
-import type { OrderWithTicket } from '../types/order'
+import { apiFetch } from '@/shared/api/http'
+import type { OrderWithTicket } from '@/features/orders/types/order'
 
 type PaymentMethod = 'credit_card' | 'paypal'
 

@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
 import { RouterLink } from 'vue-router'
-import { apiFetch } from '../utils/http'
-import type { EventItem } from '../types/event'
+import { apiFetch } from '@/shared/api/http'
+import type { EventItem } from '@/features/events/types/event'
 
 const events = ref<EventItem[]>([])
 const isLoading = ref(true)

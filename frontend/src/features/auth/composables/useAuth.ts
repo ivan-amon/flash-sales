@@ -1,6 +1,6 @@
 import { computed, readonly, ref } from 'vue'
-import { apiFetch, TOKEN_STORAGE_KEY } from '../utils/http'
-import type { Organizer, Role, User, ValidationErrors } from '../types/user'
+import { apiFetch, TOKEN_STORAGE_KEY } from '@/shared/api/http'
+import type { Organizer, Role, User, ValidationErrors } from '@/features/auth/types/user'
 
 const USER_STORAGE_KEY = 'auth_user'
 const ROLE_STORAGE_KEY = 'auth_role'

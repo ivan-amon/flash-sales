@@ -1,11 +1,11 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
-import { useAuth } from '../composables/useAuth'
-import type { ValidationErrors } from '../types/user'
+import { useAuth } from '@/features/auth/composables/useAuth'
+import type { ValidationErrors } from '@/features/auth/types/user'
 
 const router = useRouter()
-const { login } = useAuth()
+const { organizerLogin } = useAuth()
 
 const email = ref('')
 const password = ref('')
@@ -17,10 +17,10 @@ async function handleSubmit(): Promise<void> {
   errors.value = {}
 
   try {
-    const result = await login(email.value, password.value)
+    const result = await organizerLogin(email.value, password.value)
 
     if (result.ok) {
-      await router.push('/')
+      await router.push('/organizer/events/create')
     } else {
       errors.value = result.errors
     }
@@ -36,7 +36,7 @@ async function handleSubmit(): Promise<void> {
       <div class="col-md-6 col-lg-5">
         <div class="card">
           <div class="card-body">
-            <h1 class="card-title h4 mb-4">Sign in</h1>
+            <h1 class="card-title h4 mb-4">Organizer sign in</h1>
 
             <form novalidate @submit.prevent="handleSubmit">
               <div class="mb-3">
@@ -81,8 +81,8 @@ async function handleSubmit(): Promise<void> {
             </form>
 
             <p class="text-center text-muted mt-3 mb-0">
-              Don't have an account?
-              <router-link to="/register">Register</router-link>
+              Need an organizer account?
+              <router-link to="/organizer/register">Register</router-link>
             </p>
           </div>
         </div>

@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import { onMounted, onUnmounted, ref } from 'vue'
 import { RouterLink } from 'vue-router'
-import { apiFetch } from '../utils/http'
-import type { OrderStatus, OrderWithTicket } from '../types/order'
+import { apiFetch } from '@/shared/api/http'
+import type { OrderStatus, OrderWithTicket } from '@/features/orders/types/order'
 
 const orders = ref<OrderWithTicket[]>([])
 const isLoading = ref(true)

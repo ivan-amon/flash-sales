@@ -1,11 +1,11 @@
 <script setup lang="ts">
 import { onMounted, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
-import { apiFetch } from '../../utils/http'
-import { MIN_EVENT_LEAD_MINUTES, combineDateTime, splitDateTime } from '../../utils/datetime'
-import { flagEmoji } from '../../utils/format'
-import type { City, Country } from '../../types/event'
-import type { ValidationErrors } from '../../types/user'
+import { apiFetch } from '@/shared/api/http'
+import { MIN_EVENT_LEAD_MINUTES, combineDateTime, splitDateTime } from '@/shared/utils/datetime'
+import { flagEmoji } from '@/shared/utils/format'
+import type { City, Country } from '@/features/events/types/event'
+import type { ValidationErrors } from '@/features/auth/types/user'
 
 const router = useRouter()
 
