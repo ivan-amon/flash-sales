@@ -18,6 +18,7 @@ class Country extends Model
      */
     protected $fillable = [
         'name',
+        'iso_code',
     ];
 
     /**

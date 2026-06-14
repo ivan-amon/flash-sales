@@ -3,6 +3,7 @@ import { onMounted, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { apiFetch } from '../../utils/http'
 import { MIN_EVENT_LEAD_MINUTES, combineDateTime, splitDateTime } from '../../utils/datetime'
+import { flagEmoji } from '../../utils/format'
 import type { City, Country } from '../../types/event'
 import type { ValidationErrors } from '../../types/user'
 
@@ -187,7 +188,7 @@ async function handleSubmit(): Promise<void> {
                   >
                     <option :value="null" disabled>Select a country…</option>
                     <option v-for="country in countries" :key="country.id" :value="country.id">
-                      {{ country.name }}
+                      {{ flagEmoji(country.iso_code) }} {{ country.name }}
                     </option>
                   </select>
                 </div>

@@ -97,7 +97,7 @@ function onDeleted(id: number): void {
             <td class="text-end">
               <button
                 type="button"
-                class="btn btn-sm btn-outline-primary me-2"
+                class="btn btn-sm btn-outline-primary rounded-1 me-2"
                 aria-label="Edit event"
                 title="Edit"
                 @click="editingEvent = event"
@@ -106,7 +106,7 @@ function onDeleted(id: number): void {
               </button>
               <button
                 type="button"
-                class="btn btn-sm btn-outline-dange"
+                class="btn btn-sm btn-outline-danger rounded-1"
                 aria-label="Delete event"
                 title="Delete"
                 @click="deletingEvent = event"

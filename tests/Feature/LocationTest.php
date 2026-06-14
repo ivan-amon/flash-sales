@@ -16,16 +16,27 @@ class LocationTest extends TestCase
     // ==================================
     public function test_guest_can_list_countries_ordered_by_name(): void
     {
-        Country::factory()->create(['name' => 'Spain']);
-        Country::factory()->create(['name' => 'Andorra']);
+        Country::factory()->create(['name' => 'Spain', 'iso_code' => 'ES']);
+        Country::factory()->create(['name' => 'Andorra', 'iso_code' => 'AD']);
 
         $response = $this->getJson('/api/countries');
 
         $response->assertStatus(200);
         $response->assertJsonCount(2);
         $response->assertJsonPath('0.name', 'Andorra');
+        $response->assertJsonPath('0.iso_code', 'AD');
         $response->assertJsonPath('1.name', 'Spain');
-        $response->assertJsonStructure([['id', 'name', 'created_at', 'updated_at']]);
+        $response->assertJsonPath('1.iso_code', 'ES');
+        $response->assertJsonStructure([['id', 'name', 'iso_code', 'created_at', 'updated_at']]);
+    }
+
+    public function test_country_iso_code_must_be_unique(): void
+    {
+        Country::factory()->create(['iso_code' => 'ES']);
+
+        $this->expectException(\Illuminate\Database\QueryException::class);
+
+        Country::factory()->create(['iso_code' => 'ES']);
     }
 
     // ==================================
