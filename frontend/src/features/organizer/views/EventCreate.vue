@@ -4,6 +4,7 @@ import { useRouter } from 'vue-router'
 import { apiFetch } from '@/shared/api/http'
 import { MIN_EVENT_LEAD_MINUTES, combineDateTime, splitDateTime } from '@/shared/utils/datetime'
 import { flagEmoji } from '@/shared/utils/format'
+import CoverImageInput from '@/features/organizer/components/CoverImageInput.vue'
 import type { City, Country } from '@/features/events/types/event'
 import type { ValidationErrors } from '@/features/auth/types/user'
 
@@ -21,6 +22,7 @@ const countries = ref<Country[]>([])
 const cities = ref<City[]>([])
 const countryId = ref<number | null>(null)
 const cityId = ref<number | null>(null)
+const coverImage = ref<File | null>(null)
 
 const errors = ref<ValidationErrors>({})
 const generalError = ref<string | null>(null)
@@ -111,6 +113,10 @@ async function handleSubmit(): Promise<void> {
     formData.append('city_id', cityId.value === null ? '' : String(cityId.value))
     formData.append('sale_starts_at', resolveSaleStartsAt() ?? '')
     formData.append('event_starts_at', combineDateTime(eventDate.value, eventTime.value) ?? '')
+
+    if (coverImage.value) {
+      formData.append('cover_image', coverImage.value)
+    }
 
     const response = await apiFetch('/events', {
       method: 'POST',
@@ -243,7 +249,7 @@ async function handleSubmit(): Promise<void> {
                 </div>
               </div>
 
-              <div class="mb-4">
+              <div class="mb-3">
                 <label class="form-label d-block">When should the sale start?</label>
                 <div class="btn-group w-100 mb-2" role="group" aria-label="Sale start mode">
                   <input
@@ -290,13 +296,12 @@ async function handleSubmit(): Promise<void> {
                     />
                   </div>
                 </div>
-                <p v-else class="text-muted small mb-0">
-                  Tickets go on sale as soon as the event is created.
-                </p>
                 <div v-if="errors.sale_starts_at" class="invalid-feedback d-block">
                   {{ errors.sale_starts_at[0] }}
                 </div>
               </div>
+
+              <CoverImageInput v-model="coverImage" :error="errors.cover_image" />
 
               <button type="submit" class="btn btn-primary w-100" :disabled="isSubmitting">
                 <span
