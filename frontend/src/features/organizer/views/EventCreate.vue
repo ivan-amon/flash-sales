@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { onMounted, ref, watch } from 'vue'
+import { nextTick, onMounted, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { apiFetch } from '@/shared/api/http'
 import { MIN_EVENT_LEAD_MINUTES, combineDateTime, splitDateTime } from '@/shared/utils/datetime'
@@ -10,8 +10,25 @@ import type { ValidationErrors } from '@/features/auth/types/user'
 
 const router = useRouter()
 
+const DESCRIPTION_MAX_LENGTH = 65535
+
 const title = ref('')
+const description = ref('')
+const showDescription = ref(false)
+const descriptionField = ref<HTMLTextAreaElement | null>(null)
+
+async function openDescription(): Promise<void> {
+  showDescription.value = true
+  await nextTick()
+  descriptionField.value?.focus()
+}
+
+function removeDescription(): void {
+  description.value = ''
+  showDescription.value = false
+}
 const totalTickets = ref<number | null>(null)
+const price = ref<number | null>(null)
 const saleMode = ref<'now' | 'schedule'>('now')
 const saleDate = ref('')
 const saleTime = ref('')
@@ -109,7 +126,11 @@ async function handleSubmit(): Promise<void> {
   try {
     const formData = new FormData()
     formData.append('title', title.value)
+    if (description.value.trim()) {
+      formData.append('description', description.value.trim())
+    }
     formData.append('total_tickets', totalTickets.value === null ? '' : String(totalTickets.value))
+    formData.append('price', price.value === null ? '' : String(Math.round(price.value * 100)))
     formData.append('city_id', cityId.value === null ? '' : String(cityId.value))
     formData.append('sale_starts_at', resolveSaleStartsAt() ?? '')
     formData.append('event_starts_at', combineDateTime(eventDate.value, eventTime.value) ?? '')
@@ -145,7 +166,7 @@ async function handleSubmit(): Promise<void> {
 <template>
   <div class="container py-5">
     <div class="row justify-content-center">
-      <div class="col-md-7 col-lg-6">
+      <div class="col-md-9 col-lg-7">
         <div class="card">
           <div class="card-body">
             <h1 class="card-title h4 mb-4">Create event</h1>
@@ -170,17 +191,75 @@ async function handleSubmit(): Promise<void> {
               </div>
 
               <div class="mb-3">
-                <label for="total_tickets" class="form-label">Total tickets</label>
-                <input
-                  id="total_tickets"
-                  v-model.number="totalTickets"
-                  type="number"
-                  min="1"
-                  class="form-control"
-                  :class="{ 'is-invalid': errors.total_tickets }"
-                />
-                <div v-if="errors.total_tickets" class="invalid-feedback">
-                  {{ errors.total_tickets[0] }}
+                <button
+                  v-if="!showDescription"
+                  type="button"
+                  class="btn btn-link btn-sm p-0 text-decoration-none"
+                  @click="openDescription"
+                >
+                  <i class="bi bi-plus-lg me-1"></i>Add a Description (Optional)
+                </button>
+
+                <template v-else>
+                  <label for="description" class="form-label d-flex justify-content-between">
+                    <span>Description</span>
+                    <span
+                      v-if="description.length > 0"
+                      class="small"
+                      :class="description.length > DESCRIPTION_MAX_LENGTH ? 'text-danger' : 'text-muted'"
+                    >
+                      {{ description.length.toLocaleString() }} / {{ DESCRIPTION_MAX_LENGTH.toLocaleString() }}
+                    </span>
+                  </label>
+                  <textarea
+                    id="description"
+                    ref="descriptionField"
+                    v-model="description"
+                    rows="4"
+                    :maxlength="DESCRIPTION_MAX_LENGTH"
+                    class="form-control"
+                    :class="{ 'is-invalid': errors.description }"
+                    placeholder="Tell attendees what to expect — line-up, schedule, what's included…"
+                  ></textarea>
+                  <div v-if="errors.description" class="invalid-feedback">
+                    {{ errors.description[0] }}
+                  </div>
+                  <button
+                    type="button"
+                    class="btn btn-link btn-sm p-0 mt-1 text-decoration-none text-muted"
+                    @click="removeDescription"
+                  >
+                    <i class="bi bi-x-lg me-1"></i>Remove description
+                  </button>
+                </template>
+              </div>
+
+              <div class="mb-3">
+                <label class="form-label">Event starts at</label>
+                <div class="row g-2">
+                  <div class="col-7">
+                    <input
+                      id="event_date"
+                      v-model="eventDate"
+                      type="date"
+                      class="form-control"
+                      :class="{ 'is-invalid': errors.event_starts_at }"
+                      aria-label="Event start date"
+                    />
+                  </div>
+                  <div class="col-5">
+                    <input
+                      id="event_time"
+                      v-model="eventTime"
+                      type="time"
+                      class="form-control"
+                      :class="{ 'is-invalid': errors.event_starts_at }"
+                      aria-label="Event start time"
+                    />
+                  </div>
+                </div>
+                <div v-if="errors.event_starts_at" class="invalid-feedback d-block">
+                  {{ errors.event_starts_at[0] }}
                 </div>
               </div>
 
@@ -217,35 +296,6 @@ async function handleSubmit(): Promise<void> {
                   <div v-if="errors.city_id" class="invalid-feedback">
                     {{ errors.city_id[0] }}
                   </div>
-                </div>
-              </div>
-
-              <div class="mb-3">
-                <label class="form-label">Event starts at</label>
-                <div class="row g-2">
-                  <div class="col-7">
-                    <input
-                      id="event_date"
-                      v-model="eventDate"
-                      type="date"
-                      class="form-control"
-                      :class="{ 'is-invalid': errors.event_starts_at }"
-                      aria-label="Event start date"
-                    />
-                  </div>
-                  <div class="col-5">
-                    <input
-                      id="event_time"
-                      v-model="eventTime"
-                      type="time"
-                      class="form-control"
-                      :class="{ 'is-invalid': errors.event_starts_at }"
-                      aria-label="Event start time"
-                    />
-                  </div>
-                </div>
-                <div v-if="errors.event_starts_at" class="invalid-feedback d-block">
-                  {{ errors.event_starts_at[0] }}
                 </div>
               </div>
 
@@ -298,6 +348,42 @@ async function handleSubmit(): Promise<void> {
                 </div>
                 <div v-if="errors.sale_starts_at" class="invalid-feedback d-block">
                   {{ errors.sale_starts_at[0] }}
+                </div>
+              </div>
+
+              <div class="row g-2 mb-3">
+                <div class="col-sm-6">
+                  <label for="total_tickets" class="form-label">Total tickets</label>
+                  <input
+                    id="total_tickets"
+                    v-model.number="totalTickets"
+                    type="number"
+                    min="1"
+                    class="form-control"
+                    :class="{ 'is-invalid': errors.total_tickets }"
+                  />
+                  <div v-if="errors.total_tickets" class="invalid-feedback">
+                    {{ errors.total_tickets[0] }}
+                  </div>
+                </div>
+                <div class="col-sm-6">
+                  <label for="price" class="form-label">Ticket price</label>
+                  <div class="input-group" :class="{ 'has-validation': errors.price }">
+                    <span class="input-group-text">$</span>
+                    <input
+                      id="price"
+                      v-model.number="price"
+                      type="number"
+                      min="0"
+                      step="0.01"
+                      class="form-control"
+                      :class="{ 'is-invalid': errors.price }"
+                      placeholder="0.00"
+                    />
+                    <div v-if="errors.price" class="invalid-feedback">
+                      {{ errors.price[0] }}
+                    </div>
+                  </div>
                 </div>
               </div>
 

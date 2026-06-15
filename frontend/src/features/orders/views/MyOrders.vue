@@ -2,6 +2,7 @@
 import { onMounted, onUnmounted, ref } from 'vue'
 import { RouterLink } from 'vue-router'
 import { apiFetch } from '@/shared/api/http'
+import { formatPriceFromCents } from '@/shared/utils/format'
 import type { OrderStatus, OrderWithTicket } from '@/features/orders/types/order'
 
 const orders = ref<OrderWithTicket[]>([])
@@ -111,6 +112,9 @@ onMounted(async () => {
         <div class="card-body d-flex flex-wrap justify-content-between align-items-center gap-3">
           <div>
             <h5 class="card-title mb-1">{{ order.ticket.event.title }}</h5>
+            <p class="card-text mb-1">
+              <span class="fw-semibold">{{ formatPriceFromCents(order.amount) }}</span>
+            </p>
             <p class="card-text text-muted mb-2">
               Reserved until: {{ formatDate(order.expires_at) }}
             </p>
@@ -173,9 +177,13 @@ onMounted(async () => {
               height="150"
               class="mb-3"
             />
-            <p class="mb-0">
+            <p class="mb-1">
               <span class="text-muted">Ticket ID:</span>
               <strong>#{{ selectedOrder.ticket.id }}</strong>
+            </p>
+            <p class="mb-0">
+              <span class="text-muted">Paid:</span>
+              <strong>{{ formatPriceFromCents(selectedOrder.amount) }}</strong>
             </p>
           </div>
           <div class="modal-footer">

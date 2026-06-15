@@ -2,6 +2,7 @@
 import { computed, onMounted, onUnmounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { apiFetch } from '@/shared/api/http'
+import { formatPriceFromCents } from '@/shared/utils/format'
 import type { OrderWithTicket } from '@/features/orders/types/order'
 
 type PaymentMethod = 'credit_card' | 'paypal'
@@ -122,6 +123,11 @@ async function pay(): Promise<void> {
             <h1 class="card-title h4 mb-1">Checkout</h1>
             <p class="text-muted">{{ order.ticket.event.title }}</p>
 
+            <div class="d-flex justify-content-between align-items-center border-top border-bottom py-2 my-3">
+              <span class="text-muted">Total</span>
+              <span class="fs-5 fw-bold">{{ formatPriceFromCents(order.amount) }}</span>
+            </div>
+
             <template v-if="isPending && !isExpired">
               <div class="d-flex justify-content-between align-items-center mb-4">
                 <span class="text-muted">Time remaining</span>
@@ -181,7 +187,7 @@ async function pay(): Promise<void> {
                     role="status"
                     aria-hidden="true"
                   ></span>
-                  {{ isPaying ? 'Processing…' : 'Pay' }}
+                  {{ isPaying ? 'Processing…' : `Pay ${formatPriceFromCents(order.amount)}` }}
                 </button>
               </form>
             </template>
