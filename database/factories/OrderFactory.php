@@ -19,6 +19,7 @@ class OrderFactory extends Factory
         return [
             'user_id' => User::factory(),
             'ticket_id' => Ticket::factory()->reserved(),
+            'amount' => fn (array $attributes): int => Ticket::find($attributes['ticket_id'])?->price ?? fake()->numberBetween(1000, 50000),
             'status' => 'pending',
             'expires_at' => now()->addMinutes(5),
         ];

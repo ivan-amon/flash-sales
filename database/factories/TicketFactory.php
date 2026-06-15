@@ -19,6 +19,7 @@ class TicketFactory extends Factory
         return [
             'event_id' => Event::factory(),
             'status' => TicketStatus::Available,
+            'price' => fake()->numberBetween(1000, 50000),
         ];
     }
 

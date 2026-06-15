@@ -18,6 +18,7 @@ class EventFactory extends Factory
     {
         return [
             'title' => fake()->unique()->sentence(3),
+            'description' => fake()->optional()->paragraph(),
             'total_tickets' => fake()->numberBetween(10, 500),
             'organizer_id' => Organizer::factory(),
             'city_id' => City::factory(),

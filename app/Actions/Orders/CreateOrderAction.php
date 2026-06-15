@@ -39,7 +39,7 @@ class CreateOrderAction
                 ->lockForUpdate()
                 ->first();
 
-            if (!$ticket) {
+            if (! $ticket) {
                 Redis::incr($key);
                 throw new NotAvailableTicketsException("No available tickets for event {$event->id}.");
             }
@@ -55,6 +55,7 @@ class CreateOrderAction
         return Order::create([
             'user_id' => $data['user_id'],
             'ticket_id' => $ticket->id,
+            'amount' => $ticket->price,
             'status' => OrderStatus::Pending,
             'expires_at' => $expiresAt,
         ]);

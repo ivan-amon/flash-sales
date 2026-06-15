@@ -16,7 +16,9 @@ class EventStoreRequest extends FormRequest
     {
         return [
             'title' => 'required|string|unique:events,title',
+            'description' => 'nullable|string|max:65535',
             'total_tickets' => 'required|integer|min:1',
+            'price' => 'required|integer|min:0',
             'city_id' => 'required|integer|exists:cities,id',
             'sale_starts_at' => 'required|date',
             'event_starts_at' => 'required|date',

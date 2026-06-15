@@ -4,16 +4,16 @@ namespace Tests\Feature;
 
 use App\Enums\OrderStatus;
 use App\Enums\TicketStatus;
+use App\Models\Event;
+use App\Models\Order;
+use App\Models\Organizer;
+use App\Models\Ticket;
+use App\Models\User;
+use Carbon\Carbon;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Foundation\Testing\WithFaker;
 use Laravel\Sanctum\Sanctum;
 use Tests\TestCase;
-use App\Models\User;
-use App\Models\Event;
-use App\Models\Organizer;
-use App\Models\Ticket;
-use App\Models\Order;
-use Carbon\Carbon;
 
 class OrderTest extends TestCase
 {
@@ -28,6 +28,7 @@ class OrderTest extends TestCase
         $this->postJson('/api/orders', [])->assertStatus(401);
         $this->getJson('/api/orders/1')->assertStatus(401);
     }
+
     // Create Order Tests
     public function test_user_can_create_order_for_available_ticket(): void
     {
@@ -40,6 +41,7 @@ class OrderTest extends TestCase
         Ticket::factory()->count(10)->create([
             'event_id' => $event->id,
             'status' => TicketStatus::Available,
+            'price' => 3500,
         ]);
 
         $response = $this->postJson('/api/orders', [
@@ -51,15 +53,19 @@ class OrderTest extends TestCase
                 'id',
                 'user_id',
                 'ticket_id',
+                'amount',
                 'status',
                 'expires_at',
                 'created_at',
                 'updated_at',
             ]);
 
+        $this->assertEquals(3500, $response->json('amount'));
+
         $this->assertDatabaseHas('orders', [
             'user_id' => $user->id,
             'ticket_id' => $response->json('ticket_id'),
+            'amount' => 3500,
             'status' => OrderStatus::Pending->value,
             'expires_at' => Carbon::parse($response->json('expires_at'))->format('Y-m-d H:i:s'),
             'created_at' => Carbon::parse($response->json('created_at'))->format('Y-m-d H:i:s'),
@@ -289,7 +295,7 @@ class OrderTest extends TestCase
 
         $organizer = Organizer::factory()->create();
         Sanctum::actingAs($organizer);
-        
+
         $this->getJson('/api/orders')->assertStatus(404);
         $this->getJson('/api/orders/1')->assertStatus(404);
         $this->getJson('/api/orders/9999')->assertStatus(404);

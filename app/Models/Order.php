@@ -7,7 +7,6 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
-
 class Order extends Model
 {
     use HasFactory;
@@ -20,6 +19,7 @@ class Order extends Model
     protected $fillable = [
         'user_id',
         'ticket_id',
+        'amount',
         'status',
         'expires_at',
     ];
@@ -32,6 +32,7 @@ class Order extends Model
         return [
             'status' => OrderStatus::class,
             'expires_at' => 'datetime',
+            'amount' => 'integer',
         ];
     }
 

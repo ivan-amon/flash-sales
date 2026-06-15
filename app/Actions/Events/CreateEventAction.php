@@ -13,7 +13,7 @@ class CreateEventAction
     /**
      * Creates a new event and generates the associated tickets.
      *
-     * @param  array  $data  Must contain 'title', 'total_tickets', 'organizer_id', 'city_id', 'sale_starts_at', and 'event_starts_at'. May contain 'cover_image_path'.
+     * @param  array  $data  Must contain 'title', 'total_tickets', 'price', 'organizer_id', 'city_id', 'sale_starts_at', and 'event_starts_at'. May contain 'description' and 'cover_image_path'.
      */
     public function __invoke($data): Event
     {
@@ -22,6 +22,7 @@ class CreateEventAction
         try {
             $event = Event::create([
                 'title' => $data['title'],
+                'description' => $data['description'] ?? null,
                 'total_tickets' => $data['total_tickets'],
                 'organizer_id' => $data['organizer_id'],
                 'city_id' => $data['city_id'],
@@ -35,6 +36,7 @@ class CreateEventAction
                 $tickets[] = [
                     'event_id' => $event->id,
                     'status' => 'available',
+                    'price' => $data['price'],
                     'created_at' => now(),
                     'updated_at' => now(),
                 ];

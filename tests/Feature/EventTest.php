@@ -31,7 +31,9 @@ class EventTest extends TestCase
 
         $eventData = [
             'title' => 'Sample Event',
+            'description' => 'An exciting sample event.',
             'total_tickets' => 100,
+            'price' => 4999,
             'organizer_id' => 1,
             'city_id' => $city->id,
             'sale_starts_at' => now()->addDays(7),
@@ -43,6 +45,7 @@ class EventTest extends TestCase
         $response->assertStatus(201);
         $this->assertDatabaseHas('events', [
             'title' => 'Sample Event',
+            'description' => 'An exciting sample event.',
             'total_tickets' => 100,
             'organizer_id' => 1,
             'city_id' => $city->id,
@@ -50,6 +53,53 @@ class EventTest extends TestCase
             'event_starts_at' => now()->addDays(30),
         ]);
         $this->assertDatabaseCount('tickets', 100);
+        $this->assertDatabaseHas('tickets', [
+            'event_id' => $response->json('id'),
+            'price' => 4999,
+        ]);
+    }
+
+    public function test_organizer_can_create_event_without_description(): void
+    {
+        $organizer = Organizer::factory()->create();
+        Sanctum::actingAs($organizer);
+
+        $city = City::factory()->create();
+
+        $response = $this->postJson('/api/events', [
+            'title' => 'No Description Event',
+            'total_tickets' => 50,
+            'price' => 2500,
+            'city_id' => $city->id,
+            'sale_starts_at' => now()->addDays(7),
+            'event_starts_at' => now()->addDays(30),
+        ]);
+
+        $response->assertStatus(201);
+        $this->assertDatabaseHas('events', [
+            'title' => 'No Description Event',
+            'description' => null,
+        ]);
+    }
+
+    public function test_organizer_cannot_create_event_without_price(): void
+    {
+        $organizer = Organizer::factory()->create();
+        Sanctum::actingAs($organizer);
+
+        $city = City::factory()->create();
+
+        $response = $this->postJson('/api/events', [
+            'title' => 'Priceless Event',
+            'total_tickets' => 50,
+            'city_id' => $city->id,
+            'sale_starts_at' => now()->addDays(7),
+            'event_starts_at' => now()->addDays(30),
+        ]);
+
+        $response->assertStatus(422);
+        $response->assertJsonValidationErrors('price');
+        $this->assertDatabaseMissing('events', ['title' => 'Priceless Event']);
     }
 
     // ==================================
@@ -344,6 +394,7 @@ class EventTest extends TestCase
         $response = $this->postJson('/api/events', [
             'title' => 'Event With Cover',
             'total_tickets' => 50,
+            'price' => 1500,
             'city_id' => $city->id,
             'sale_starts_at' => now()->addDays(7),
             'event_starts_at' => now()->addDays(30),
