@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
-import { RouterLink } from 'vue-router'
 import { apiFetch } from '@/shared/api/http'
+import EventCard from '@/features/events/components/EventCard.vue'
 import type { EventItem, Paginated } from '@/features/events/types/event'
 
 const PER_PAGE = 15
@@ -162,11 +162,6 @@ const filteredEvents = computed(() =>
   }),
 )
 
-const dateFormatter = new Intl.DateTimeFormat(undefined, {
-  dateStyle: 'medium',
-  timeStyle: 'short',
-})
-
 onMounted(async () => {
   await loadEvents()
 
@@ -296,39 +291,7 @@ onBeforeUnmount(() => {
 
     <div v-else class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4">
       <div v-for="event in filteredEvents" :key="event.id" class="col">
-        <RouterLink
-          :to="{ name: 'event-detail', params: { id: event.id } }"
-          class="card event-card h-100 bg-secondary text-reset text-decoration-none"
-        >
-          <div class="card-body d-flex flex-column position-relative">
-            <span
-              class="badge position-absolute top-0 end-0 m-3"
-              :class="event.available_tickets > 0 ? 'bg-success' : 'bg-danger'"
-            >
-              <template v-if="event.available_tickets > 0">
-                {{ event.available_tickets }} / {{ event.total_tickets }} tickets available
-              </template>
-              <template v-else>Sold Out!</template>
-            </span>
-            <h5 class="card-title pe-5">{{ event.title }}</h5>
-            <p v-if="event.city" class="card-text text-light mb-1">
-              <i class="bi bi-geo-alt me-1"></i>{{ event.city.name
-              }}<template v-if="event.city.country">, {{ event.city.country.name }}</template>
-            </p>
-            <p class="card-text text-light mb-2">
-              <i class="bi bi-clock me-1"></i>{{ dateFormatter.format(new Date(event.event_starts_at)) }}
-            </p>
-            <span
-              v-if="event.available_tickets > 0"
-              class="btn btn-primary w-100 mt-2"
-            >
-              Reserve Ticket
-            </span>
-            <span v-else class="btn btn-primary w-100 mt-2">
-              More Information
-            </span>
-          </div>
-        </RouterLink>
+        <EventCard :event="event" />
       </div>
     </div>
 
@@ -365,16 +328,5 @@ onBeforeUnmount(() => {
     width: 18rem;
     flex: 0 0 auto;
   }
-}
-
-.event-card {
-  transition:
-    transform 0.15s ease,
-    box-shadow 0.15s ease;
-}
-
-.event-card:hover {
-  transform: translateY(-4px);
-  box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.4);
 }
 </style>
