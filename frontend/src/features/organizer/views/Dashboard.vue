@@ -3,7 +3,7 @@ import { onMounted, ref } from 'vue'
 import { RouterLink } from 'vue-router'
 import { apiFetch } from '@/shared/api/http'
 import { useAuth } from '@/features/auth/composables/useAuth'
-import type { EventItem } from '@/features/events/types/event'
+import type { EventItem, Paginated } from '@/features/events/types/event'
 import EventEditModal from '@/features/organizer/components/EventEditModal.vue'
 import EventDeleteModal from '@/features/organizer/components/EventDeleteModal.vue'
 
@@ -25,16 +25,31 @@ function formatSaleStart(value: string | null): string {
 }
 
 onMounted(async () => {
-  try {
-    const response = await apiFetch('/events')
+  const organizerId = organizer.value?.id
+  if (!organizerId) {
+    error.value = 'You must be signed in as an organizer.'
+    isLoading.value = false
+    return
+  }
 
-    if (!response.ok) {
-      error.value = `Failed to load your events (${response.status}).`
-      return
+  try {
+    const collected: EventItem[] = []
+    let page: number | null = 1
+
+    while (page !== null) {
+      const response = await apiFetch(`/events?organizer_id=${organizerId}&per_page=50&page=${page}`)
+
+      if (!response.ok) {
+        error.value = `Failed to load your events (${response.status}).`
+        return
+      }
+
+      const payload: Paginated<EventItem> = await response.json()
+      collected.push(...payload.data)
+      page = payload.next_page_url ? payload.current_page + 1 : null
     }
 
-    const all = (await response.json()) as EventItem[]
-    events.value = all.filter((event) => event.organizer_id === organizer.value?.id)
+    events.value = collected
   } catch {
     error.value = 'Unable to reach the server. Please try again later.'
   } finally {

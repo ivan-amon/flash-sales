@@ -47,5 +47,37 @@ class DatabaseSeeder extends Seeder
         ]);
 
         Redis::set("available_tickets_{$event->id}", 5);
+
+        $this->seedSampleEvents();
+    }
+
+    /**
+     * Seed 50 events across several organizers and real cities,
+     * each with a mix of available and sold tickets.
+     */
+    private function seedSampleEvents(): void
+    {
+        $organizerIds = Organizer::factory()->count(5)->create()->pluck('id');
+        $cityIds = City::query()->pluck('id');
+
+        foreach (range(1, 50) as $n) {
+            $event = Event::factory()->create([
+                'organizer_id' => $organizerIds->random(),
+                'city_id' => $cityIds->random(),
+            ]);
+
+            $availableCount = fake()->numberBetween(0, $event->total_tickets);
+            $soldCount = $event->total_tickets - $availableCount;
+
+            if ($availableCount > 0) {
+                Ticket::factory()->count($availableCount)->available()->create(['event_id' => $event->id]);
+            }
+
+            if ($soldCount > 0) {
+                Ticket::factory()->count($soldCount)->sold()->create(['event_id' => $event->id]);
+            }
+
+            Redis::set("available_tickets_{$event->id}", $availableCount);
+        }
     }
 }

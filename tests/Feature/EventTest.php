@@ -348,6 +348,49 @@ class EventTest extends TestCase
         }
     }
 
+    public function test_event_listing_respects_per_page_query_parameter(): void
+    {
+        $organizer = Organizer::factory()->create();
+        Event::factory()->count(10)->create(['organizer_id' => $organizer->id]);
+
+        $response = $this->getJson('/api/events?per_page=5');
+
+        $response->assertStatus(200);
+        $response->assertJsonCount(5, 'data');
+        $response->assertJsonPath('per_page', 5);
+        $response->assertJsonPath('total', 10);
+        $response->assertJsonPath('last_page', 2);
+    }
+
+    public function test_event_listing_caps_per_page_at_the_maximum(): void
+    {
+        $organizer = Organizer::factory()->create();
+        Event::factory()->count(60)->create(['organizer_id' => $organizer->id]);
+
+        $response = $this->getJson('/api/events?per_page=1000');
+
+        $response->assertStatus(200);
+        $response->assertJsonPath('per_page', 50);
+        $response->assertJsonCount(50, 'data');
+    }
+
+    public function test_event_listing_can_be_filtered_by_organizer_id(): void
+    {
+        $organizerA = Organizer::factory()->create();
+        $organizerB = Organizer::factory()->create();
+        Event::factory()->count(3)->create(['organizer_id' => $organizerA->id]);
+        Event::factory()->count(2)->create(['organizer_id' => $organizerB->id]);
+
+        $response = $this->getJson("/api/events?organizer_id={$organizerA->id}");
+
+        $response->assertStatus(200);
+        $response->assertJsonCount(3, 'data');
+        $response->assertJsonPath('total', 3);
+        foreach ($response->json('data') as $event) {
+            $this->assertEquals($organizerA->id, $event['organizer_id']);
+        }
+    }
+
     public function test_event_listing_runs_a_constant_number_of_queries(): void
     {
         $organizer = Organizer::factory()->create();

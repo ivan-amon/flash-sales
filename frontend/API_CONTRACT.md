@@ -208,6 +208,14 @@ Notes:
 
 > **⚠️ Breaking change — this endpoint is now paginated.** It used to return a flat array of events. It now returns Laravel's standard length-aware paginator object: the events live under `data`, with pagination metadata at the top level. Use `?page=N` to navigate pages.
 
+**Query parameters**
+
+| Param | Type | Default | Notes |
+|---|---|---|---|
+| `page` | integer | `1` | Page to fetch. |
+| `per_page` | integer | `15` | Items per page. Clamped server-side to the range **1–50** (values above 50 are capped at 50). |
+| `organizer_id` | integer | — | Optional. When present, returns only events owned by that organizer (still paginated). Use it for the organizer dashboard instead of fetching all events and filtering client-side. |
+
 **Response `200 OK`** — a paginated payload. Each item in `data` is shaped as above (with `city.country` and `available_tickets`).
 ```json
 {
