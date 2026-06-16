@@ -6,9 +6,11 @@ namespace App\Http\Controllers;
 
 use App\Actions\Events\AvailableTicketsAction;
 use App\Actions\Events\CreateEventAction;
+use App\Enums\TicketStatus;
 use App\Http\Requests\EventStoreRequest;
 use App\Http\Requests\EventUpdateRequest;
 use App\Models\Event;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
@@ -20,14 +22,17 @@ class EventController extends Controller
     /**
      * Display a listing of the resource.
      */
-    public function index(AvailableTicketsAction $availableTickets): JsonResponse
+    public function index(): JsonResponse
     {
-        $events = Event::with('city.country')->get()->map(function (Event $event) use ($availableTickets) {
-            $eventArray = $event->toArray();
-            $eventArray['available_tickets'] = $availableTickets($event);
-
-            return $eventArray;
-        });
+        // Optimizations: withCount avoids N+1 queries (available tickets counted in a single subquery),
+        // paginate prevents loading all events into memory, and tickets table is indexed on (event_id, status)
+        // for efficient availability counting.
+        $events = Event::query()
+            ->with('city.country')
+            ->withCount(['tickets as available_tickets' => function (Builder $query): void {
+                $query->where('status', TicketStatus::Available);
+            }])
+            ->paginate();
 
         return response()->json($events);
     }

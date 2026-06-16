@@ -11,6 +11,7 @@ use App\Models\Event;
 use App\Models\Order;
 use App\Models\Ticket;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Redis;
 use Tests\TestCase;
 
@@ -21,7 +22,7 @@ class ReleaseExpiredOrdersTest extends TestCase
     /**
      * @return array{0: Event, 1: Ticket, 2: Order, 3: string}
      */
-    private function makePendingOrder(string $expiresAt): array
+    private function makePendingOrder(Carbon $expiresAt): array
     {
         $event = Event::factory()->create(['sale_starts_at' => now()->subDay()]);
         $ticket = Ticket::factory()->reserved()->create(['event_id' => $event->id]);

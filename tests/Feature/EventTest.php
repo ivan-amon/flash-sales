@@ -12,6 +12,8 @@ use App\Models\Ticket;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Storage;
 use Laravel\Sanctum\Sanctum;
 use Tests\TestCase;
@@ -334,10 +336,40 @@ class EventTest extends TestCase
         $response = $this->getJson('/api/events');
 
         $response->assertStatus(200);
-        $response->assertJsonCount(3); // 3 events
-        foreach ($response->json() as $event) {
+        $response->assertJsonCount(3, 'data'); // 3 events in the paginated payload
+        $response->assertJsonStructure([
+            'data' => [['id', 'title', 'available_tickets']],
+            'current_page',
+            'per_page',
+            'total',
+        ]);
+        foreach ($response->json('data') as $event) {
             $this->assertEquals($event['available_tickets'], 8);
         }
+    }
+
+    public function test_event_listing_runs_a_constant_number_of_queries(): void
+    {
+        $organizer = Organizer::factory()->create();
+        $events = Event::factory()->count(5)->create(['organizer_id' => $organizer->id]);
+
+        foreach ($events as $event) {
+            Ticket::factory()->count(4)->create([
+                'event_id' => $event->id,
+                'status' => TicketStatus::Available,
+            ]);
+        }
+
+        DB::enableQueryLog();
+        $this->getJson('/api/events')->assertStatus(200);
+        $queryCount = count(DB::getQueryLog());
+        DB::disableQueryLog();
+
+        $this->assertLessThanOrEqual(
+            5,
+            $queryCount,
+            "Event listing should not scale queries with the number of events (N+1). Ran {$queryCount} queries."
+        );
     }
 
     public function test_guest_can_view_specific_event_by_id()
@@ -495,5 +527,15 @@ class EventTest extends TestCase
 
         $response->assertStatus(204);
         $disk->assertMissing($path);
+    }
+
+    public function test_tickets_table_has_composite_index_on_event_id_and_status(): void
+    {
+        $indexes = collect(Schema::getIndexes('tickets'));
+
+        $this->assertTrue(
+            $indexes->contains(fn (array $index): bool => $index['columns'] === ['event_id', 'status']),
+            'The tickets table is missing the composite index on [event_id, status].'
+        );
     }
 }

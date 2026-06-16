@@ -206,7 +206,25 @@ Notes:
 
 ### List events — `GET /events` *(public)*
 
-**Response `200 OK`** — array of events, each shaped as above (with `city.country` and `available_tickets`).
+> **⚠️ Breaking change — this endpoint is now paginated.** It used to return a flat array of events. It now returns Laravel's standard length-aware paginator object: the events live under `data`, with pagination metadata at the top level. Use `?page=N` to navigate pages.
+
+**Response `200 OK`** — a paginated payload. Each item in `data` is shaped as above (with `city.country` and `available_tickets`).
+```json
+{
+  "current_page": 1,
+  "data": [ /* array of event objects */ ],
+  "first_page_url": "http://localhost/api/events?page=1",
+  "from": 1,
+  "last_page": 4,
+  "last_page_url": "http://localhost/api/events?page=4",
+  "next_page_url": "http://localhost/api/events?page=2",
+  "path": "http://localhost/api/events",
+  "per_page": 15,
+  "prev_page_url": null,
+  "to": 15,
+  "total": 52
+}
+```
 
 ### Get a single event — `GET /events/{event}` *(public)*
 
