@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Http\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
@@ -22,7 +24,7 @@ class ProcessOrderPaymentRequest extends FormRequest
     public function rules(): array
     {
         return [
-            "payment_method" => "string|required|in:credit_card,paypal"
+            'payment_method' => 'string|required|in:credit_card,paypal',
         ];
     }
 }

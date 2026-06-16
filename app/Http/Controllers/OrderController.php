@@ -1,19 +1,21 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Http\Controllers;
 
-use App\Models\Order;
-use Illuminate\Http\JsonResponse;
-use Illuminate\Http\Request;
-use Illuminate\Routing\Controller;
-use App\Http\Requests\OrderStoreRequest;
 use App\Actions\Orders\CreateOrderAction;
 use App\Actions\Orders\ProcessOrderPaymentAction;
 use App\Exceptions\Orders\OrderExpiredException;
 use App\Exceptions\Orders\OrderNotPendingException;
 use App\Exceptions\Tickets\NotAvailableTicketsException;
 use App\Exceptions\Tickets\TicketSalesNotStartedException;
+use App\Http\Requests\OrderStoreRequest;
 use App\Http\Requests\ProcessOrderPaymentRequest;
+use App\Models\Order;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
+use Illuminate\Routing\Controller;
 use Illuminate\Support\Facades\Gate;
 
 class OrderController extends Controller
@@ -25,6 +27,7 @@ class OrderController extends Controller
     {
         Gate::authorize('viewAny', Order::class);
         $orders = $request->user()->orders()->with('ticket.event')->get();
+
         return response()->json($orders);
     }
 
@@ -38,6 +41,7 @@ class OrderController extends Controller
 
         try {
             $order = $createOrderAction($data);
+
             return response()->json($order, 201);
         } catch (TicketSalesNotStartedException $e) {
             return response()->json(['error' => $e->getMessage()], 403);
@@ -53,6 +57,7 @@ class OrderController extends Controller
     {
         Gate::authorize('view', $order);
         $order->load('ticket.event');
+
         return response()->json($order);
     }
 
@@ -63,9 +68,10 @@ class OrderController extends Controller
     {
         Gate::authorize('update', $order); // Authorize the user to update the order (i.e., process payment)
         try {
-            $request_data  = $request->validated();
+            $request_data = $request->validated();
             $request_data['order_id'] = $order->id;
             $processed_order = $processOrderPaymentAction($request_data);
+
             return response()->json([
                 'message' => 'Order processed successfully',
                 'data' => [

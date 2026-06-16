@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Http\Controllers;
 
 use App\Http\Requests\OrganizerLoginRequest;
@@ -10,7 +12,6 @@ use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\ValidationException;
-
 
 class OrganizerAuthController extends Controller
 {
@@ -47,7 +48,7 @@ class OrganizerAuthController extends Controller
 
         $organizer = Organizer::where('email', $validated['email'])->first();
 
-        if (!$organizer || !Hash::check($validated['password'], $organizer->password)) {
+        if (! $organizer || ! Hash::check($validated['password'], $organizer->password)) {
             throw ValidationException::withMessages([
                 'email' => ['The provided credentials are incorrect.'],
             ]);

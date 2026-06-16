@@ -1,4 +1,6 @@
-<?php 
+<?php
+
+declare(strict_types=1);
 
 namespace App\Actions\Events;
 
@@ -11,13 +13,13 @@ class AvailableTicketsAction
     /**
      * Retrieves the number of available tickets for a given event.
      *
-     * @param Event $event The event for which to count available tickets.
+     * @param  Event  $event  The event for which to count available tickets.
      * @return int The count of available tickets.
      */
     public function __invoke(Event $event): int
     {
         return Ticket::where('event_id', $event->id)
-                     ->where('status', TicketStatus::Available)
-                     ->count();
+            ->where('status', TicketStatus::Available)
+            ->count();
     }
 }

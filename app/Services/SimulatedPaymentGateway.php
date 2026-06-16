@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Services;
 
 use App\Contracts\PaymentGateway;
@@ -9,8 +11,8 @@ class SimulatedPaymentGateway implements PaymentGateway
     /**
      * Simulate processing a payment for the given order and payment method.
      *
-     * @param int $orderId The ID of the order to process payment for.
-     * @param string $paymentMethod The payment method to use (e.g., 'credit_card', 'paypal').
+     * @param  int  $orderId  The ID of the order to process payment for.
+     * @param  string  $paymentMethod  The payment method to use (e.g., 'credit_card', 'paypal').
      * @return bool Returns true if the payment was successful, false otherwise.
      */
     public function processPayment(string $paymentMethod): bool
