@@ -56,32 +56,40 @@ class DatabaseSeeder extends Seeder
     }
 
     /**
-     * Seed 50 events across several organizers and real cities,
-     * each with a mix of available and sold tickets.
+     * Seed between 3 and 10 events for every country across several organizers,
+     * each placed in one of the country's cities with a mix of available and
+     * sold tickets, so every country has events to list.
      */
     private function seedSampleEvents(): void
     {
         $organizerIds = Organizer::factory()->count(5)->create()->pluck('id');
-        $cityIds = City::query()->pluck('id');
 
-        foreach (range(1, 50) as $n) {
-            $event = Event::factory()->create([
-                'organizer_id' => $organizerIds->random(),
-                'city_id' => $cityIds->random(),
-            ]);
+        Country::query()->each(function (Country $country) use ($organizerIds): void {
+            $cityIds = City::query()->where('country_code', $country->iso_code)->pluck('id');
 
-            $availableCount = fake()->numberBetween(0, $event->total_tickets);
-            $soldCount = $event->total_tickets - $availableCount;
-
-            if ($availableCount > 0) {
-                Ticket::factory()->count($availableCount)->available()->create(['event_id' => $event->id]);
+            if ($cityIds->isEmpty()) {
+                return;
             }
 
-            if ($soldCount > 0) {
-                Ticket::factory()->count($soldCount)->sold()->create(['event_id' => $event->id]);
-            }
+            foreach (range(1, fake()->numberBetween(3, 10)) as $n) {
+                $event = Event::factory()->create([
+                    'organizer_id' => $organizerIds->random(),
+                    'city_id' => $cityIds->random(),
+                ]);
 
-            Redis::set("available_tickets_{$event->id}", $availableCount);
-        }
+                $availableCount = fake()->numberBetween(0, $event->total_tickets);
+                $soldCount = $event->total_tickets - $availableCount;
+
+                if ($availableCount > 0) {
+                    Ticket::factory()->count($availableCount)->available()->create(['event_id' => $event->id]);
+                }
+
+                if ($soldCount > 0) {
+                    Ticket::factory()->count($soldCount)->sold()->create(['event_id' => $event->id]);
+                }
+
+                Redis::set("available_tickets_{$event->id}", $availableCount);
+            }
+        });
     }
 }
