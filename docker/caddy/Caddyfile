@@ -1,0 +1,14 @@
+{$APP_DOMAIN} {
+	encode gzip zstd
+
+	# API, signed email-verification links and uploaded files go to Laravel
+	@backend path /api/* /storage/*
+	handle @backend {
+		reverse_proxy api:80
+	}
+
+	# Everything else is the Vue SPA
+	handle {
+		reverse_proxy frontend:80
+	}
+}

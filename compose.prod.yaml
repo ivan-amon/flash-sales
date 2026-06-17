@@ -1,0 +1,113 @@
+services:
+    caddy:
+        image: caddy:2-alpine
+        restart: unless-stopped
+        ports:
+            - '80:80'
+            - '443:443'
+        environment:
+            APP_DOMAIN: '${APP_DOMAIN}'
+        volumes:
+            - './docker/caddy/Caddyfile:/etc/caddy/Caddyfile:ro'
+            - 'caddy-data:/data'
+            - 'caddy-config:/config'
+        depends_on:
+            - api
+            - frontend
+        networks:
+            - app
+
+    api:
+        image: '${API_IMAGE}'
+        restart: unless-stopped
+        env_file:
+            - .env
+        volumes:
+            - 'storage-public:/var/www/html/storage/app/public'
+        depends_on:
+            mysql:
+                condition: service_healthy
+            redis:
+                condition: service_healthy
+        networks:
+            - app
+
+    worker:
+        image: '${API_IMAGE}'
+        restart: unless-stopped
+        command: 'php artisan queue:work --tries=3 --max-time=3600 --sleep=1'
+        env_file:
+            - .env
+        depends_on:
+            mysql:
+                condition: service_healthy
+            redis:
+                condition: service_healthy
+        networks:
+            - app
+
+    scheduler:
+        image: '${API_IMAGE}'
+        restart: unless-stopped
+        command: 'php artisan schedule:work'
+        env_file:
+            - .env
+        depends_on:
+            mysql:
+                condition: service_healthy
+            redis:
+                condition: service_healthy
+        networks:
+            - app
+
+    frontend:
+        image: '${FRONTEND_IMAGE}'
+        restart: unless-stopped
+        networks:
+            - app
+
+    mysql:
+        image: 'mysql:8.4'
+        restart: unless-stopped
+        environment:
+            MYSQL_DATABASE: '${DB_DATABASE}'
+            MYSQL_USER: '${DB_USERNAME}'
+            MYSQL_PASSWORD: '${DB_PASSWORD}'
+            MYSQL_ROOT_PASSWORD: '${DB_ROOT_PASSWORD}'
+        volumes:
+            - 'app-mysql:/var/lib/mysql'
+        networks:
+            - app
+        healthcheck:
+            test: ['CMD', 'mysqladmin', 'ping', '-p${DB_ROOT_PASSWORD}']
+            retries: 5
+            timeout: 5s
+
+    redis:
+        image: 'redis:alpine'
+        restart: unless-stopped
+        command: 'redis-server --appendonly yes'
+        volumes:
+            - 'app-redis:/data'
+        networks:
+            - app
+        healthcheck:
+            test: ['CMD', 'redis-cli', 'ping']
+            retries: 5
+            timeout: 5s
+
+networks:
+    app:
+        driver: bridge
+
+volumes:
+    app-mysql:
+        driver: local
+    app-redis:
+        driver: local
+    storage-public:
+        driver: local
+    caddy-data:
+        driver: local
+    caddy-config:
+        driver: local
