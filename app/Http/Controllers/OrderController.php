@@ -5,13 +5,13 @@ declare(strict_types=1);
 namespace App\Http\Controllers;
 
 use App\Actions\Orders\CreateOrderAction;
+use App\Actions\Orders\CreatePaymentIntentAction;
 use App\Actions\Orders\ProcessOrderPaymentAction;
 use App\Exceptions\Orders\OrderExpiredException;
 use App\Exceptions\Orders\OrderNotPendingException;
 use App\Exceptions\Tickets\NotAvailableTicketsException;
 use App\Exceptions\Tickets\TicketSalesNotStartedException;
 use App\Http\Requests\OrderStoreRequest;
-use App\Http\Requests\ProcessOrderPaymentRequest;
 use App\Models\Order;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -62,22 +62,38 @@ class OrderController extends Controller
     }
 
     /**
-     * Process the payment for the specified order.
+     * Create a payment intent for the specified order and return its client secret.
      */
-    public function processPayment(ProcessOrderPaymentRequest $request, Order $order, ProcessOrderPaymentAction $processOrderPaymentAction): JsonResponse
+    public function createPaymentIntent(Order $order, CreatePaymentIntentAction $createPaymentIntentAction): JsonResponse
     {
-        Gate::authorize('update', $order); // Authorize the user to update the order (i.e., process payment)
+        Gate::authorize('update', $order);
+
         try {
-            $request_data = $request->validated();
-            $request_data['order_id'] = $order->id;
-            $processed_order = $processOrderPaymentAction($request_data);
+            $clientSecret = $createPaymentIntentAction($order);
+
+            return response()->json(['client_secret' => $clientSecret]);
+        } catch (OrderNotPendingException $e) {
+            return response()->json(['error' => $e->getMessage()], 409);
+        } catch (OrderExpiredException $e) {
+            return response()->json(['error' => $e->getMessage()], 410);
+        }
+    }
+
+    /**
+     * Confirm the payment for the specified order.
+     */
+    public function processPayment(Order $order, ProcessOrderPaymentAction $processOrderPaymentAction): JsonResponse
+    {
+        Gate::authorize('update', $order);
+
+        try {
+            $processed_order = $processOrderPaymentAction($order);
 
             return response()->json([
                 'message' => 'Order processed successfully',
                 'data' => [
                     'order_id' => $processed_order->id,
                     'status' => $processed_order->status,
-                    'payment_method' => $request_data['payment_method'],
                     'updated_at' => $processed_order->updated_at,
                 ],
             ]);

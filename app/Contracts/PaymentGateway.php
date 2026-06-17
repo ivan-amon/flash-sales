@@ -4,13 +4,19 @@ declare(strict_types=1);
 
 namespace App\Contracts;
 
+use App\Models\Order;
+
 interface PaymentGateway
 {
     /**
-     * Process a payment for the given order and payment method.
+     * Create a payment intent for the given order.
      *
-     * @param  string  $paymentMethod  The payment method to use (e.g., 'credit_card', 'paypal').
-     * @return bool Returns true if the payment was successful, false otherwise.
+     * @return array{id: string, client_secret: string}
      */
-    public function processPayment(string $paymentMethod): bool;
+    public function createPaymentIntent(Order $order): array;
+
+    /**
+     * Verify with the gateway that the order's payment intent has succeeded.
+     */
+    public function verifyPayment(Order $order): bool;
 }

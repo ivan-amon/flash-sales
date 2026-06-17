@@ -1,7 +1,3 @@
-# Project Status 📊
-
-Race conditions have been resolved using Redis-based locking. The payment gateway is simulated.
-
 # Flash Sales ⚡
 
 Flash Sales is a system built on a Laravel 12 (PHP 8.5) REST API, designed to manage events, tickets, and purchase orders for high-demand ticket sales and fast sales campaigns. It is prepared to resolve race conditions and preserve inventory integrity under heavy concurrent load using Redis-based atomic locking.

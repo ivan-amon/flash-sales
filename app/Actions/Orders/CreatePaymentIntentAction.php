@@ -6,12 +6,11 @@ namespace App\Actions\Orders;
 
 use App\Contracts\PaymentGateway;
 use App\Enums\OrderStatus;
-use App\Enums\TicketStatus;
 use App\Exceptions\Orders\OrderExpiredException;
 use App\Exceptions\Orders\OrderNotPendingException;
 use App\Models\Order;
 
-class ProcessOrderPaymentAction
+class CreatePaymentIntentAction
 {
     public function __construct(
         protected PaymentGateway $payment_gateway,
@@ -19,12 +18,12 @@ class ProcessOrderPaymentAction
     ) {}
 
     /**
-     * Confirm the order's payment with the gateway and update its status accordingly.
+     * Create a payment intent for the order and return its client secret.
      *
      * @throws OrderNotPendingException
      * @throws OrderExpiredException
      */
-    public function __invoke(Order $order): Order
+    public function __invoke(Order $order): string
     {
         if ($order->status !== OrderStatus::Pending) {
             throw new OrderNotPendingException("Order {$order->id} is not in pending status.");
@@ -36,22 +35,11 @@ class ProcessOrderPaymentAction
             throw new OrderExpiredException("Order {$order->id} has expired and has been cancelled.");
         }
 
-        if (! $this->payment_gateway->verifyPayment($order)) {
-            ($this->releaseOrderTicket)($order, OrderStatus::Cancelled);
+        $intent = $this->payment_gateway->createPaymentIntent($order);
 
-            return $order;
-        }
-
-        $order->status = OrderStatus::Confirmed;
+        $order->payment_intent_id = $intent['id'];
         $order->save();
 
-        $ticket = $order->ticket;
-
-        if ($ticket) {
-            $ticket->status = TicketStatus::Sold;
-            $ticket->save();
-        }
-
-        return $order;
+        return $intent['client_secret'];
     }
 }

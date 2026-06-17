@@ -53,19 +53,54 @@ class OrderPaymentTest extends TestCase
         return [$user, $order];
     }
 
+    public function test_create_payment_intent_returns_client_secret()
+    {
+        [$user, $order] = $this->createOrder();
+
+        $this->mock(PaymentGateway::class, function ($mock) {
+            $mock->shouldReceive('createPaymentIntent')->once()->andReturn([
+                'id' => 'pi_test_123',
+                'client_secret' => 'pi_test_123_secret_abc',
+            ]);
+        });
+
+        Sanctum::actingAs($user);
+
+        $this->postJson("/api/orders/{$order->id}/payment-intent")
+            ->assertStatus(200)
+            ->assertJsonPath('client_secret', 'pi_test_123_secret_abc');
+
+        $this->assertDatabaseHas('orders', [
+            'id' => $order->id,
+            'payment_intent_id' => 'pi_test_123',
+        ]);
+    }
+
+    public function test_cannot_create_payment_intent_for_non_pending_order()
+    {
+        [$user, $order] = $this->createOrder(OrderStatus::Confirmed);
+
+        $this->mock(PaymentGateway::class, function ($mock) {
+            $mock->shouldNotReceive('createPaymentIntent');
+        });
+
+        Sanctum::actingAs($user);
+
+        $this->postJson("/api/orders/{$order->id}/payment-intent")
+            ->assertStatus(409);
+    }
+
     public function test_successful_payment_of_pending_order()
     {
         [$user, $order] = $this->createOrder();
 
         $this->mock(PaymentGateway::class, function ($mock) {
-            $mock->shouldReceive('processPayment')->once()->andReturn(true);
+            $mock->shouldReceive('verifyPayment')->once()->andReturn(true);
         });
 
         Sanctum::actingAs($user);
 
-        $response = $this->postJson("/api/orders/{$order->id}/pay", [
-            'payment_method' => 'credit_card',
-        ]);
+        $response = $this->postJson("/api/orders/{$order->id}/pay");
 
         $response->assertStatus(200)
             ->assertJsonPath('data.status', OrderStatus::Confirmed->value)
@@ -87,12 +122,12 @@ class OrderPaymentTest extends TestCase
         [$user, $order] = $this->createOrder(OrderStatus::Confirmed);
 
         $this->mock(PaymentGateway::class, function ($mock) {
-            $mock->shouldNotReceive('processPayment');
+            $mock->shouldNotReceive('verifyPayment');
         });
 
         Sanctum::actingAs($user);
 
-        $this->postJson("/api/orders/{$order->id}/pay", ['payment_method' => 'credit_card'])
+        $this->postJson("/api/orders/{$order->id}/pay")
             ->assertStatus(409);
     }
 
@@ -101,12 +136,12 @@ class OrderPaymentTest extends TestCase
         [$user, $order] = $this->createOrder(OrderStatus::Pending, now()->subMinute());
 
         $this->mock(PaymentGateway::class, function ($mock) {
-            $mock->shouldNotReceive('processPayment');
+            $mock->shouldNotReceive('verifyPayment');
         });
 
         Sanctum::actingAs($user);
 
-        $this->postJson("/api/orders/{$order->id}/pay", ['payment_method' => 'credit_card'])
+        $this->postJson("/api/orders/{$order->id}/pay")
             ->assertStatus(410);
 
         $this->assertDatabaseHas('orders', [
@@ -124,14 +159,12 @@ class OrderPaymentTest extends TestCase
         [$user, $order] = $this->createOrder();
 
         $this->mock(PaymentGateway::class, function ($mock) {
-            $mock->shouldReceive('processPayment')->andReturn(false);
+            $mock->shouldReceive('verifyPayment')->andReturn(false);
         });
 
         Sanctum::actingAs($user);
 
-        $response = $this->postJson("/api/orders/{$order->id}/pay", [
-            'payment_method' => 'credit_card',
-        ]);
+        $response = $this->postJson("/api/orders/{$order->id}/pay");
 
         $response->assertStatus(200)
             ->assertJsonPath('data.status', OrderStatus::Cancelled->value);
@@ -146,31 +179,11 @@ class OrderPaymentTest extends TestCase
         ]);
     }
 
-    public function test_payment_data_validation()
-    {
-        [$user, $order] = $this->createOrder();
-        Sanctum::actingAs($user);
-
-        $this->postJson("/api/orders/{$order->id}/pay", ['payment_method' => 'invalid_method'])
-            ->assertStatus(422)
-            ->assertJsonValidationErrors(['payment_method']);
-    }
-
-    public function test_payment_data_validation_no_data()
-    {
-        [$user, $order] = $this->createOrder();
-        Sanctum::actingAs($user);
-
-        $this->postJson("/api/orders/{$order->id}/pay", [])
-            ->assertStatus(422)
-            ->assertJsonValidationErrors(['payment_method']);
-    }
-
     public function test_unauthenticated_user_cannot_pay()
     {
         [, $order] = $this->createOrder();
 
-        $this->postJson("/api/orders/{$order->id}/pay", ['payment_method' => 'credit_card'])
+        $this->postJson("/api/orders/{$order->id}/pay")
             ->assertStatus(401);
     }
 
@@ -181,7 +194,7 @@ class OrderPaymentTest extends TestCase
 
         Sanctum::actingAs($userB);
 
-        $this->postJson("/api/orders/{$orderA->id}/pay", ['payment_method' => 'credit_card'])
+        $this->postJson("/api/orders/{$orderA->id}/pay")
             ->assertStatus(404);
     }
 
@@ -192,7 +205,7 @@ class OrderPaymentTest extends TestCase
         $organizer = Organizer::factory()->create();
         Sanctum::actingAs($organizer);
 
-        $this->postJson("/api/orders/{$order->id}/pay", ['payment_method' => 'credit_card'])
+        $this->postJson("/api/orders/{$order->id}/pay")
             ->assertStatus(404);
     }
 }

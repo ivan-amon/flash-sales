@@ -23,6 +23,7 @@ class Order extends Model
         'ticket_id',
         'amount',
         'status',
+        'payment_intent_id',
         'expires_at',
     ];
 

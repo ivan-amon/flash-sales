@@ -5,22 +5,31 @@ declare(strict_types=1);
 namespace App\Services;
 
 use App\Contracts\PaymentGateway;
+use App\Models\Order;
+use Illuminate\Support\Str;
 
 class SimulatedPaymentGateway implements PaymentGateway
 {
     /**
-     * Simulate processing a payment for the given order and payment method.
+     * Create a simulated payment intent for the given order.
      *
-     * @param  int  $orderId  The ID of the order to process payment for.
-     * @param  string  $paymentMethod  The payment method to use (e.g., 'credit_card', 'paypal').
-     * @return bool Returns true if the payment was successful, false otherwise.
+     * @return array{id: string, client_secret: string}
      */
-    public function processPayment(string $paymentMethod): bool
+    public function createPaymentIntent(Order $order): array
     {
-        // Simulate a delay for processing the payment
-        sleep(rand(1, 3)); // Simulate a delay of 1 to 3 seconds
+        $id = 'pi_sim_'.Str::random(24);
 
-        // For simulation purposes, we'll randomly determine if the payment is successful or not
-        return rand(0, 100) <= 90; // 90% chance of success
+        return [
+            'id' => $id,
+            'client_secret' => $id.'_secret_'.Str::random(24),
+        ];
+    }
+
+    /**
+     * Simulate verifying that the order's payment intent has succeeded.
+     */
+    public function verifyPayment(Order $order): bool
+    {
+        return $order->payment_intent_id !== null;
     }
 }

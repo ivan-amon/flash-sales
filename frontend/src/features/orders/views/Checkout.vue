@@ -1,11 +1,11 @@
 <script setup lang="ts">
-import { computed, onMounted, onUnmounted, ref } from 'vue'
+import { computed, nextTick, onMounted, onUnmounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
+import type { Stripe, StripeCardElement } from '@stripe/stripe-js'
 import { apiFetch } from '@/shared/api/http'
+import { getStripe } from '@/shared/payments/stripe'
 import { formatPriceFromCents } from '@/shared/utils/format'
 import type { OrderWithTicket } from '@/features/orders/types/order'
-
-type PaymentMethod = 'credit_card' | 'paypal'
 
 const route = useRoute()
 const router = useRouter()
@@ -17,8 +17,10 @@ const isLoading = ref(true)
 const error = ref<string | null>(null)
 const payError = ref<string | null>(null)
 const isPaying = ref(false)
-const paymentMethod = ref<PaymentMethod>('credit_card')
-const cardNumber = ref('')
+
+const stripe = ref<Stripe | null>(null)
+const cardEl = ref<HTMLElement | null>(null)
+let cardElement: StripeCardElement | null = null
 
 const now = ref(Date.now())
 let timer: ReturnType<typeof setInterval> | undefined
@@ -54,52 +56,122 @@ onMounted(async () => {
     }
 
     order.value = await response.json()
-
-    if (order.value?.status === 'pending') {
-      timer = setInterval(() => {
-        now.value = Date.now()
-      }, 1000)
-    }
   } catch {
     error.value = 'Unable to reach the server. Please try again later.'
+    return
   } finally {
     isLoading.value = false
+  }
+
+  if (order.value?.status === 'pending' && !isExpired.value) {
+    timer = setInterval(() => {
+      now.value = Date.now()
+    }, 1000)
+
+    await setupCardElement()
   }
 })
 
 onUnmounted(() => {
   clearInterval(timer)
+  cardElement?.destroy()
 })
+
+async function setupCardElement(): Promise<void> {
+  stripe.value = await getStripe()
+
+  if (!stripe.value) {
+    return
+  }
+
+  await nextTick()
+
+  if (!cardEl.value) {
+    return
+  }
+
+  const elements = stripe.value.elements()
+  cardElement = elements.create('card', {
+    style: {
+      base: {
+        color: '#fff',
+        fontSize: '16px',
+        '::placeholder': { color: '#adb5bd' },
+      },
+      invalid: { color: '#e74c3c', iconColor: '#e74c3c' },
+    },
+  })
+  cardElement.mount(cardEl.value)
+}
 
 async function pay(): Promise<void> {
   isPaying.value = true
   payError.value = null
 
   try {
-    const response = await apiFetch(`/orders/${id}/pay`, {
-      method: 'POST',
-      body: JSON.stringify({ payment_method: paymentMethod.value }),
-    })
-
-    if (response.ok) {
-      await router.push({ name: 'my-orders' })
+    const clientSecret = await createPaymentIntent()
+    if (!clientSecret) {
       return
     }
 
-    if (response.status === 409 || response.status === 410) {
-      const data = (await response.json()) as { error: string }
-      payError.value = data.error
+    if (stripe.value && cardElement) {
+      const { error: stripeError, paymentIntent } = await stripe.value.confirmCardPayment(
+        clientSecret,
+        { payment_method: { card: cardElement } },
+      )
 
-      if (response.status === 410 && order.value) {
-        order.value.status = 'expired'
+      if (stripeError) {
+        payError.value = stripeError.message ?? 'Your card was declined.'
+        return
       }
-    } else {
-      payError.value = 'Payment could not be processed. Please try again.'
+
+      if (paymentIntent?.status !== 'succeeded') {
+        payError.value = 'The payment could not be completed.'
+        return
+      }
     }
+
+    await confirmPayment()
   } catch {
     payError.value = 'Unable to reach the server. Please try again later.'
   } finally {
     isPaying.value = false
+  }
+}
+
+async function createPaymentIntent(): Promise<string | null> {
+  const response = await apiFetch(`/orders/${id}/payment-intent`, { method: 'POST' })
+
+  if (response.ok) {
+    const data = (await response.json()) as { client_secret: string }
+    return data.client_secret
+  }
+
+  await handlePaymentError(response)
+  return null
+}
+
+async function confirmPayment(): Promise<void> {
+  const response = await apiFetch(`/orders/${id}/pay`, { method: 'POST' })
+
+  if (response.ok) {
+    await router.push({ name: 'my-orders' })
+    return
+  }
+
+  await handlePaymentError(response)
+}
+
+async function handlePaymentError(response: Response): Promise<void> {
+  if (response.status === 409 || response.status === 410) {
+    const data = (await response.json()) as { error: string }
+    payError.value = data.error
+
+    if (response.status === 410 && order.value) {
+      order.value.status = 'expired'
+    }
+  } else {
+    payError.value = 'Payment could not be processed. Please try again.'
   }
 }
 </script>
@@ -144,40 +216,14 @@ async function pay(): Promise<void> {
               </div>
 
               <form novalidate @submit.prevent="pay">
-                <div class="mb-3">
-                  <label class="form-label d-block">Payment method</label>
-                  <div class="form-check form-check-inline">
-                    <input
-                      id="method-card"
-                      v-model="paymentMethod"
-                      class="form-check-input"
-                      type="radio"
-                      value="credit_card"
-                    />
-                    <label class="form-check-label" for="method-card">Credit Card</label>
-                  </div>
-                  <div class="form-check form-check-inline">
-                    <input
-                      id="method-paypal"
-                      v-model="paymentMethod"
-                      class="form-check-input"
-                      type="radio"
-                      value="paypal"
-                    />
-                    <label class="form-check-label" for="method-paypal">PayPal</label>
-                  </div>
+                <div v-if="stripe" class="mb-4">
+                  <label class="form-label">Card details</label>
+                  <div ref="cardEl" class="form-control card-element"></div>
                 </div>
 
-                <div v-if="paymentMethod === 'credit_card'" class="mb-4">
-                  <label for="card_number" class="form-label">Card number</label>
-                  <input
-                    id="card_number"
-                    v-model="cardNumber"
-                    type="text"
-                    class="form-control"
-                    placeholder="4242 4242 4242 4242"
-                    autocomplete="off"
-                  />
+                <div v-else class="alert alert-info" role="alert">
+                  <i class="bi bi-info-circle me-2"></i>
+                  Test mode — payment is simulated, no card required.
                 </div>
 
                 <button type="submit" class="btn btn-primary w-100" :disabled="!canPay">
@@ -205,3 +251,9 @@ async function pay(): Promise<void> {
     </div>
   </div>
 </template>
+
+<style scoped>
+.card-element {
+  padding: 0.75rem;
+}
+</style>
