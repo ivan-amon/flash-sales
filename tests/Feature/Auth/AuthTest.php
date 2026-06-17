@@ -5,7 +5,10 @@ declare(strict_types=1);
 namespace Tests\Feature\Auth;
 
 use App\Models\User;
+use App\Notifications\QueuedVerifyEmail;
+use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Notification;
 use Laravel\Sanctum\Sanctum;
 use Tests\TestCase;
 
@@ -35,6 +38,23 @@ class AuthTest extends TestCase
         $this->assertDatabaseHas('users', [
             'email' => 'ivan@example.com',
         ]);
+    }
+
+    public function test_register_queues_email_verification_notification(): void
+    {
+        Notification::fake();
+
+        $this->postJson('/api/register', [
+            'name' => 'Ivan',
+            'email' => 'ivan@example.com',
+            'password' => 'password123',
+            'password_confirmation' => 'password123',
+        ])->assertStatus(201);
+
+        $user = User::where('email', 'ivan@example.com')->firstOrFail();
+
+        Notification::assertSentTo($user, QueuedVerifyEmail::class);
+        $this->assertInstanceOf(ShouldQueue::class, new QueuedVerifyEmail);
     }
 
     public function test_register_requires_name(): void
