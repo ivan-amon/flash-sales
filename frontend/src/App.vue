@@ -3,6 +3,7 @@ import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import logo from '@/assets/logo.svg'
 import { useAuth } from '@/features/auth/composables/useAuth'
+import CountrySelect from '@/shared/components/CountrySelect.vue'
 
 const router = useRouter()
 const { user, organizer, isAuthenticated, isOrganizer, isUser, logout } = useAuth()
@@ -57,13 +58,17 @@ async function handleLogout(): Promise<void> {
             <span class="navbar-text me-lg-3 mb-2 mb-lg-0">
               {{ user?.email ?? organizer?.email }}
             </span>
+            <CountrySelect class="me-lg-3 mb-2 mb-lg-0" />
             <button type="button" class="btn btn-outline-light btn-sm" @click="handleLogout">
               Logout
             </button>
           </template>
-          <router-link v-else class="btn btn-outline-light btn-sm" to="/login">
-            Login
-          </router-link>
+          <template v-else>
+            <CountrySelect class="me-lg-3 mb-2 mb-lg-0" />
+            <router-link class="btn btn-outline-light btn-sm" to="/login">
+              Login
+            </router-link>
+          </template>
         </div>
       </div>
     </div>

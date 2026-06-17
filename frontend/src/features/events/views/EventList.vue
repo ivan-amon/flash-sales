@@ -1,8 +1,11 @@
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue'
+import { computed, onMounted, ref, watch } from 'vue'
 import { apiFetch } from '@/shared/api/http'
+import { useCountry } from '@/shared/composables/useCountry'
 import EventCard from '@/features/events/components/EventCard.vue'
 import type { EventItem } from '@/features/events/types/event'
+
+const { selectedCountry, setResolvedCountry } = useCountry()
 
 const events = ref<EventItem[]>([])
 const isLoading = ref(true)
@@ -18,6 +21,7 @@ const loadEvents = async (): Promise<void> => {
     }
 
     events.value = await response.json()
+    setResolvedCountry(events.value[0]?.city?.country?.iso_code ?? null)
   } catch {
     error.value = 'Unable to reach the server. Please try again later.'
   } finally {
@@ -141,6 +145,7 @@ const filteredEvents = computed(() =>
 )
 
 onMounted(loadEvents)
+watch(selectedCountry, loadEvents)
 </script>
 
 <template>

@@ -1,5 +1,4 @@
 export interface Country {
-  id: number
   name: string
   iso_code: string
   created_at: string
@@ -8,7 +7,7 @@ export interface Country {
 
 export interface City {
   id: number
-  country_id: number
+  country_code: string
   name: string
   created_at: string
   updated_at: string

@@ -37,7 +37,7 @@ const eventTime = ref('')
 
 const countries = ref<Country[]>([])
 const cities = ref<City[]>([])
-const countryId = ref<number | null>(null)
+const countryCode = ref<string | null>(null)
 const cityId = ref<number | null>(null)
 const coverImage = ref<File | null>(null)
 
@@ -56,16 +56,16 @@ onMounted(async () => {
   }
 })
 
-watch(countryId, async (id) => {
+watch(countryCode, async (code) => {
   cityId.value = null
   cities.value = []
 
-  if (id === null) {
+  if (code === null) {
     return
   }
 
   try {
-    const response = await apiFetch(`/cities?country_id=${id}`)
+    const response = await apiFetch(`/cities?country_code=${code}`)
     if (response.ok) {
       cities.value = (await response.json()) as City[]
     }
@@ -268,11 +268,11 @@ async function handleSubmit(): Promise<void> {
                   <label for="country" class="form-label">Country</label>
                   <select
                     id="country"
-                    v-model.number="countryId"
+                    v-model="countryCode"
                     class="form-select"
                   >
                     <option :value="null" disabled>Select a country…</option>
-                    <option v-for="country in countries" :key="country.id" :value="country.id">
+                    <option v-for="country in countries" :key="country.iso_code" :value="country.iso_code">
                       {{ flagEmoji(country.iso_code) }} {{ country.name }}
                     </option>
                   </select>
@@ -284,10 +284,10 @@ async function handleSubmit(): Promise<void> {
                     v-model.number="cityId"
                     class="form-select"
                     :class="{ 'is-invalid': errors.city_id }"
-                    :disabled="countryId === null"
+                    :disabled="countryCode === null"
                   >
                     <option :value="null" disabled>
-                      {{ countryId === null ? 'Pick a country first' : 'Select a city…' }}
+                      {{ countryCode === null ? 'Pick a country first' : 'Select a city…' }}
                     </option>
                     <option v-for="city in cities" :key="city.id" :value="city.id">
                       {{ city.name }}

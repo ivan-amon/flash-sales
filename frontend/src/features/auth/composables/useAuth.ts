@@ -138,6 +138,23 @@ async function organizerRegister(payload: OrganizerRegisterPayload): Promise<Aut
   )
 }
 
+async function updateCountry(code: string): Promise<boolean> {
+  const response = await apiFetch('/user/country', {
+    method: 'PATCH',
+    body: JSON.stringify({ country_code: code }),
+  })
+
+  if (!response.ok) {
+    return false
+  }
+
+  const updated = (await response.json()) as User
+  user.value = updated
+  localStorage.setItem(USER_STORAGE_KEY, JSON.stringify(updated))
+
+  return true
+}
+
 async function logout(): Promise<void> {
   const path = role.value === 'organizer' ? '/organizer/logout' : '/logout'
 
@@ -162,6 +179,7 @@ export function useAuth() {
     register,
     organizerLogin,
     organizerRegister,
+    updateCountry,
     logout,
   }
 }
