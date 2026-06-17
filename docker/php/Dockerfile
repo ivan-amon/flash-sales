@@ -52,6 +52,11 @@ RUN chmod +x /usr/local/bin/entrypoint.sh
 # Writable dirs owned by the php-fpm user
 RUN chown -R www-data:www-data storage bootstrap/cache
 
+# Nginx runs its workers as www-data (see nginx.conf); ensure its temp dirs
+# (used to buffer uploaded request bodies) are writable by that user.
+RUN mkdir -p /var/lib/nginx/tmp/client_body \
+    && chown -R www-data:www-data /var/lib/nginx
+
 EXPOSE 80
 
 ENTRYPOINT ["entrypoint.sh"]
