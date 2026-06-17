@@ -94,7 +94,7 @@ async function setupCardElement(): Promise<void> {
   cardElement = elements.create('card', {
     style: {
       base: {
-        color: '#fff',
+        color: '#212529',
         fontSize: '16px',
         '::placeholder': { color: '#adb5bd' },
       },

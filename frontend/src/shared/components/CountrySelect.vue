@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onMounted } from 'vue'
+import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 import { useAuth } from '@/features/auth/composables/useAuth'
 import { useCountry } from '@/shared/composables/useCountry'
 import { flagEmoji } from '@/shared/utils/format'
@@ -7,7 +7,17 @@ import { flagEmoji } from '@/shared/utils/format'
 const { countries, selectedCountry, resolvedCountry, loadCountries, setCountry } = useCountry()
 const { isUser, user, updateCountry } = useAuth()
 
-onMounted(loadCountries)
+const isOpen = ref(false)
+const root = ref<HTMLElement | null>(null)
+
+onMounted(() => {
+  loadCountries()
+  document.addEventListener('click', onClickOutside)
+})
+
+onBeforeUnmount(() => {
+  document.removeEventListener('click', onClickOutside)
+})
 
 const current = computed<string>(() => {
   if (isUser.value) {
@@ -17,12 +27,13 @@ const current = computed<string>(() => {
   return selectedCountry.value ?? resolvedCountry.value ?? ''
 })
 
-async function onChange(event: Event): Promise<void> {
-  const code = (event.target as HTMLSelectElement).value
-  if (!code) {
-    return
+function onClickOutside(event: MouseEvent): void {
+  if (root.value && !root.value.contains(event.target as Node)) {
+    isOpen.value = false
   }
+}
 
+async function select(code: string): Promise<void> {
   // Authenticated users keep their country on their profile, so the backend
   // can honour it regardless of the request headers.
   if (isUser.value) {
@@ -33,19 +44,34 @@ async function onChange(event: Event): Promise<void> {
   }
 
   setCountry(code)
+  isOpen.value = false
 }
 </script>
 
 <template>
-  <select
-    class="form-select form-select-sm w-auto"
-    aria-label="Select country"
-    :value="current"
-    @change="onChange"
-  >
-    <option value="" disabled>🌐</option>
-    <option v-for="country in countries" :key="country.iso_code" :value="country.iso_code">
-      {{ flagEmoji(country.iso_code) }} {{ country.iso_code }}
-    </option>
-  </select>
+  <div ref="root" class="dropdown">
+    <button
+      type="button"
+      class="btn btn-dark btn-sm dropdown-toggle"
+      aria-label="Select country"
+      :aria-expanded="isOpen"
+      @click="isOpen = !isOpen"
+    >
+      <span class="fs-6">{{ current ? flagEmoji(current) : '🌐' }}</span>
+    </button>
+
+    <ul class="dropdown-menu dropdown-menu-dark dropdown-menu-end" :class="{ show: isOpen }">
+      <li v-for="country in countries" :key="country.iso_code">
+        <button
+          type="button"
+          class="dropdown-item d-flex align-items-center gap-2"
+          :class="{ active: country.iso_code === current }"
+          @click="select(country.iso_code)"
+        >
+          <span class="fs-6">{{ flagEmoji(country.iso_code) }}</span>
+          <span>{{ country.iso_code }}</span>
+        </button>
+      </li>
+    </ul>
+  </div>
 </template>

@@ -56,10 +56,12 @@ async function handleLogout(): Promise<void> {
           class="ms-lg-auto d-flex flex-column flex-lg-row align-items-lg-center mt-3 mt-lg-0"
         >
           <template v-if="isAuthenticated">
-            <span class="navbar-text me-lg-3 mb-2 mb-lg-0">
-              {{ user?.email ?? organizer?.email }}
-            </span>
-            <CountrySelect class="me-lg-3 mb-2 mb-lg-0" />
+            <div class="d-flex flex-row align-items-center me-lg-3 mb-2 mb-lg-0">
+              <span class="navbar-text">
+                {{ user?.email ?? organizer?.email }}
+              </span>
+              <CountrySelect class="ms-3" />
+            </div>
             <button type="button" class="btn btn-outline-light btn-sm" @click="handleLogout">
               Logout
             </button>
