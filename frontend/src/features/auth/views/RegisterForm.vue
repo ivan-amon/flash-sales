@@ -27,7 +27,7 @@ async function handleSubmit(): Promise<void> {
     })
 
     if (result.ok) {
-      await router.push('/')
+      await router.push({ name: 'email-verify-notice' })
     } else {
       errors.value = result.errors
     }

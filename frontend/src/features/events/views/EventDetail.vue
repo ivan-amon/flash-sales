@@ -8,7 +8,7 @@ import type { Order } from '@/features/orders/types/order'
 
 const route = useRoute()
 const router = useRouter()
-const { isAuthenticated, isUser, isOrganizer } = useAuth()
+const { isAuthenticated, isUser, isOrganizer, isEmailVerified } = useAuth()
 
 const id = route.params.id as string
 
@@ -103,8 +103,8 @@ async function reserveTicket(): Promise<void> {
     }
 
     if (response.status === 403 || response.status === 409) {
-      const data = (await response.json()) as { error: string }
-      reserveError.value = data.error
+      const data = (await response.json()) as { error?: string; message?: string }
+      reserveError.value = data.error ?? data.message ?? 'You are not allowed to reserve this ticket.'
     } else {
       reserveError.value = 'Could not reserve a ticket. Please try again.'
     }
@@ -202,6 +202,15 @@ async function reserveTicket(): Promise<void> {
                   @click="router.push('/login')"
                 >
                   Log in to reserve
+                </button>
+
+                <button
+                  v-else-if="isUser && !isEmailVerified"
+                  type="button"
+                  class="btn btn-warning btn-lg"
+                  @click="router.push({ name: 'email-verify-notice' })"
+                >
+                  Verify email to reserve
                 </button>
 
                 <button

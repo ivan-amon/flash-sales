@@ -49,6 +49,17 @@ const router = createRouter({
       component: () => import('@/features/auth/views/RegisterForm.vue'),
     },
     {
+      path: '/email/verify',
+      name: 'email-verify-notice',
+      component: () => import('@/features/auth/views/EmailVerifyNotice.vue'),
+      meta: { requiresUser: true },
+    },
+    {
+      path: '/email/verified',
+      name: 'email-verified',
+      component: () => import('@/features/auth/views/EmailVerified.vue'),
+    },
+    {
       path: '/organizer/login',
       name: 'organizer-login',
       component: () => import('@/features/organizer/views/OrganizerLogin.vue'),

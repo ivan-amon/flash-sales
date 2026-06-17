@@ -28,6 +28,7 @@ const organizer = ref<Organizer | null>(
 const isAuthenticated = computed<boolean>(() => token.value !== null)
 const isOrganizer = computed<boolean>(() => role.value === 'organizer')
 const isUser = computed<boolean>(() => role.value === 'user')
+const isEmailVerified = computed<boolean>(() => user.value?.email_verified_at != null)
 
 function persistSession(principal: User | Organizer, nextToken: string, nextRole: Role): void {
   token.value = nextToken
@@ -155,6 +156,32 @@ async function updateCountry(code: string): Promise<boolean> {
   return true
 }
 
+async function refreshUser(): Promise<User | null> {
+  if (role.value !== 'user') {
+    return null
+  }
+
+  const response = await apiFetch('/user')
+
+  if (!response.ok) {
+    return null
+  }
+
+  const updated = (await response.json()) as User
+  user.value = updated
+  localStorage.setItem(USER_STORAGE_KEY, JSON.stringify(updated))
+
+  return updated
+}
+
+async function resendVerificationEmail(): Promise<boolean> {
+  const response = await apiFetch('/email/verification-notification', {
+    method: 'POST',
+  })
+
+  return response.ok
+}
+
 async function logout(): Promise<void> {
   const path = role.value === 'organizer' ? '/organizer/logout' : '/logout'
 
@@ -175,11 +202,14 @@ export function useAuth() {
     isAuthenticated,
     isOrganizer,
     isUser,
+    isEmailVerified,
     login,
     register,
     organizerLogin,
     organizerRegister,
     updateCountry,
+    refreshUser,
+    resendVerificationEmail,
     logout,
   }
 }
