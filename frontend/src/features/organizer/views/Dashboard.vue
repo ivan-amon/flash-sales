@@ -3,7 +3,7 @@ import { onMounted, ref } from 'vue'
 import { RouterLink } from 'vue-router'
 import { apiFetch } from '@/shared/api/http'
 import { useAuth } from '@/features/auth/composables/useAuth'
-import type { EventItem, Paginated } from '@/features/events/types/event'
+import type { EventItem } from '@/features/events/types/event'
 import EventEditModal from '@/features/organizer/components/EventEditModal.vue'
 import EventDeleteModal from '@/features/organizer/components/EventDeleteModal.vue'
 
@@ -33,23 +33,14 @@ onMounted(async () => {
   }
 
   try {
-    const collected: EventItem[] = []
-    let page: number | null = 1
+    const response = await apiFetch('/organizer/events')
 
-    while (page !== null) {
-      const response = await apiFetch(`/events?organizer_id=${organizerId}&per_page=50&page=${page}`)
-
-      if (!response.ok) {
-        error.value = `Failed to load your events (${response.status}).`
-        return
-      }
-
-      const payload: Paginated<EventItem> = await response.json()
-      collected.push(...payload.data)
-      page = payload.next_page_url ? payload.current_page + 1 : null
+    if (!response.ok) {
+      error.value = `Failed to load your events (${response.status}).`
+      return
     }
 
-    events.value = collected
+    events.value = await response.json()
   } catch {
     error.value = 'Unable to reach the server. Please try again later.'
   } finally {

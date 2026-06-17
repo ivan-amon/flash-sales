@@ -336,58 +336,12 @@ class EventTest extends TestCase
         $response = $this->getJson('/api/events');
 
         $response->assertStatus(200);
-        $response->assertJsonCount(3, 'data'); // 3 events in the paginated payload
+        $response->assertJsonCount(3); // 3 events returned in a flat array
         $response->assertJsonStructure([
-            'data' => [['id', 'title', 'available_tickets']],
-            'current_page',
-            'per_page',
-            'total',
+            ['id', 'title', 'available_tickets'],
         ]);
-        foreach ($response->json('data') as $event) {
+        foreach ($response->json() as $event) {
             $this->assertEquals($event['available_tickets'], 8);
-        }
-    }
-
-    public function test_event_listing_respects_per_page_query_parameter(): void
-    {
-        $organizer = Organizer::factory()->create();
-        Event::factory()->count(10)->create(['organizer_id' => $organizer->id]);
-
-        $response = $this->getJson('/api/events?per_page=5');
-
-        $response->assertStatus(200);
-        $response->assertJsonCount(5, 'data');
-        $response->assertJsonPath('per_page', 5);
-        $response->assertJsonPath('total', 10);
-        $response->assertJsonPath('last_page', 2);
-    }
-
-    public function test_event_listing_caps_per_page_at_the_maximum(): void
-    {
-        $organizer = Organizer::factory()->create();
-        Event::factory()->count(60)->create(['organizer_id' => $organizer->id]);
-
-        $response = $this->getJson('/api/events?per_page=1000');
-
-        $response->assertStatus(200);
-        $response->assertJsonPath('per_page', 50);
-        $response->assertJsonCount(50, 'data');
-    }
-
-    public function test_event_listing_can_be_filtered_by_organizer_id(): void
-    {
-        $organizerA = Organizer::factory()->create();
-        $organizerB = Organizer::factory()->create();
-        Event::factory()->count(3)->create(['organizer_id' => $organizerA->id]);
-        Event::factory()->count(2)->create(['organizer_id' => $organizerB->id]);
-
-        $response = $this->getJson("/api/events?organizer_id={$organizerA->id}");
-
-        $response->assertStatus(200);
-        $response->assertJsonCount(3, 'data');
-        $response->assertJsonPath('total', 3);
-        foreach ($response->json('data') as $event) {
-            $this->assertEquals($organizerA->id, $event['organizer_id']);
         }
     }
 
@@ -412,6 +366,65 @@ class EventTest extends TestCase
             5,
             $queryCount,
             "Event listing should not scale queries with the number of events (N+1). Ran {$queryCount} queries."
+        );
+    }
+
+    public function test_organizer_only_sees_their_own_events(): void
+    {
+        $organizer = Organizer::factory()->create();
+        $other = Organizer::factory()->create();
+        $ownEvents = Event::factory()->count(3)->create(['organizer_id' => $organizer->id]);
+        Event::factory()->count(2)->create(['organizer_id' => $other->id]);
+
+        foreach ($ownEvents as $event) {
+            Ticket::factory()->count(8)->create([
+                'event_id' => $event->id,
+                'status' => TicketStatus::Available,
+            ]);
+        }
+
+        Sanctum::actingAs($organizer, ['is_organizer']);
+
+        $response = $this->getJson('/api/organizer/events');
+
+        $response->assertStatus(200);
+        $response->assertJsonCount(3);
+        foreach ($response->json() as $event) {
+            $this->assertEquals($organizer->id, $event['organizer_id']);
+            $this->assertEquals(8, $event['available_tickets']);
+        }
+    }
+
+    public function test_guest_cannot_list_organizer_events(): void
+    {
+        $response = $this->getJson('/api/organizer/events');
+
+        $response->assertStatus(401);
+    }
+
+    public function test_organizer_events_listing_runs_a_constant_number_of_queries(): void
+    {
+        $organizer = Organizer::factory()->create();
+        $events = Event::factory()->count(5)->create(['organizer_id' => $organizer->id]);
+
+        foreach ($events as $event) {
+            Ticket::factory()->count(4)->create([
+                'event_id' => $event->id,
+                'status' => TicketStatus::Available,
+            ]);
+        }
+
+        Sanctum::actingAs($organizer, ['is_organizer']);
+
+        DB::enableQueryLog();
+        $this->getJson('/api/organizer/events')->assertStatus(200);
+        $queryCount = count(DB::getQueryLog());
+        DB::disableQueryLog();
+
+        $this->assertLessThanOrEqual(
+            3,
+            $queryCount,
+            "Organizer events listing should not scale queries with the number of events (N+1). Ran {$queryCount} queries."
         );
     }
 
@@ -482,7 +495,7 @@ class EventTest extends TestCase
         $path = $response->json('cover_image_path');
         $this->assertNotNull($path);
         $disk->assertExists($path);
-        $response->assertJsonPath('cover_image_url', asset('storage/'.$path));
+        $response->assertJsonPath('cover_image_url', asset('storage/' . $path));
     }
 
     public function test_event_cover_image_must_be_a_valid_image(): void
@@ -577,7 +590,7 @@ class EventTest extends TestCase
         $indexes = collect(Schema::getIndexes('tickets'));
 
         $this->assertTrue(
-            $indexes->contains(fn (array $index): bool => $index['columns'] === ['event_id', 'status']),
+            $indexes->contains(fn(array $index): bool => $index['columns'] === ['event_id', 'status']),
             'The tickets table is missing the composite index on [event_id, status].'
         );
     }

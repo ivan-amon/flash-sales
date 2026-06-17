@@ -22,28 +22,31 @@ class EventController extends Controller
     /**
      * Display a listing of the resource.
      */
-    private const int DEFAULT_PER_PAGE = 15;
-
-    private const int MAX_PER_PAGE = 50;
-
-    public function index(Request $request): JsonResponse
+    public function index(): JsonResponse
     {
         // Optimizations: withCount avoids N+1 queries (available tickets counted in a single subquery),
-        // paginate prevents loading all events into memory, and tickets table is indexed on (event_id, status)
-        // for efficient availability counting.
-        $perPage = (int) $request->integer('per_page', self::DEFAULT_PER_PAGE);
-        $perPage = max(1, min($perPage, self::MAX_PER_PAGE));
-
+        // and the tickets table is indexed on (event_id, status) for efficient availability counting.
         $events = Event::query()
-            ->when($request->filled('organizer_id'), function (Builder $query) use ($request): void {
-                $query->where('organizer_id', $request->integer('organizer_id'));
-            })
             ->with('city.country')
             ->withCount(['tickets as available_tickets' => function (Builder $query): void {
                 $query->where('status', TicketStatus::Available);
             }])
-            ->paginate($perPage)
-            ->withQueryString();
+            ->get();
+
+        return response()->json($events);
+    }
+
+    /**
+     * Display the authenticated organizer's own events.
+     */
+    public function organizerEvents(Request $request): JsonResponse
+    {
+        $events = Event::query()
+            ->where('organizer_id', $request->user()->id)
+            ->withCount(['tickets as available_tickets' => function (Builder $query): void {
+                $query->where('status', TicketStatus::Available);
+            }])
+            ->get();
 
         return response()->json($events);
     }

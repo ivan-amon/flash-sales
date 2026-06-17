@@ -1,49 +1,27 @@
 <script setup lang="ts">
-import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import { apiFetch } from '@/shared/api/http'
 import EventCard from '@/features/events/components/EventCard.vue'
-import type { EventItem, Paginated } from '@/features/events/types/event'
-
-const PER_PAGE = 15
+import type { EventItem } from '@/features/events/types/event'
 
 const events = ref<EventItem[]>([])
 const isLoading = ref(true)
-const isLoadingMore = ref(false)
-const nextPage = ref<number | null>(1)
 const error = ref<string | null>(null)
-const sentinel = ref<HTMLElement | null>(null)
-let observer: IntersectionObserver | null = null
-
-const hasMore = computed(() => nextPage.value !== null)
 
 const loadEvents = async (): Promise<void> => {
-  if (nextPage.value === null || isLoadingMore.value) {
-    return
-  }
-
-  const page = nextPage.value
-  if (page > 1) {
-    isLoadingMore.value = true
-  }
-
   try {
-    const response = await apiFetch(`/events?page=${page}&per_page=${PER_PAGE}`)
+    const response = await apiFetch('/events')
 
     if (!response.ok) {
       error.value = `Failed to load events (${response.status}).`
-      nextPage.value = null
       return
     }
 
-    const payload: Paginated<EventItem> = await response.json()
-    events.value.push(...payload.data)
-    nextPage.value = payload.next_page_url ? payload.current_page + 1 : null
+    events.value = await response.json()
   } catch {
     error.value = 'Unable to reach the server. Please try again later.'
-    nextPage.value = null
   } finally {
     isLoading.value = false
-    isLoadingMore.value = false
   }
 }
 const searchQuery = ref('')
@@ -162,33 +140,7 @@ const filteredEvents = computed(() =>
   }),
 )
 
-onMounted(async () => {
-  await loadEvents()
-
-  observer = new IntersectionObserver(
-    (entries) => {
-      if (entries[0]?.isIntersecting) {
-        void loadEvents()
-      }
-    },
-    { rootMargin: '200px' },
-  )
-
-  watch(
-    sentinel,
-    (element) => {
-      observer?.disconnect()
-      if (element) {
-        observer?.observe(element)
-      }
-    },
-    { immediate: true },
-  )
-})
-
-onBeforeUnmount(() => {
-  observer?.disconnect()
-})
+onMounted(loadEvents)
 </script>
 
 <template>
@@ -294,18 +246,6 @@ onBeforeUnmount(() => {
         <EventCard :event="event" />
       </div>
     </div>
-
-    <div ref="sentinel" aria-hidden="true"></div>
-
-    <div v-if="isLoadingMore" class="text-center py-4">
-      <div class="spinner-border" role="status">
-        <span class="visually-hidden">Loading more…</span>
-      </div>
-    </div>
-
-    <p v-else-if="!isLoading && !error && !hasMore && events.length > 0" class="text-muted text-center py-4 mb-0">
-      You've reached the end.
-    </p>
   </div>
 </template>
 

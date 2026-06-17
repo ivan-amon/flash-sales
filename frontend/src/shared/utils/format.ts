@@ -3,15 +3,17 @@
  * by mapping each letter to its Unicode regional indicator symbol.
  */
 export function flagEmoji(isoCode: string): string {
-  return isoCode
-    .toUpperCase()
-    .replace(/./g, (char) => String.fromCodePoint(127397 + char.charCodeAt(0)))
+    return isoCode
+        .toUpperCase()
+        .replace(/./g, (char) =>
+            String.fromCodePoint(127397 + char.charCodeAt(0)),
+        );
 }
 
 const priceFormatter = new Intl.NumberFormat(undefined, {
-  style: 'currency',
-  currency: 'USD',
-})
+    style: "currency",
+    currency: "USD",
+});
 
 /**
  * Formats an integer amount of cents into a localized currency string
@@ -19,5 +21,5 @@ const priceFormatter = new Intl.NumberFormat(undefined, {
  * floating-point errors, so divide by 100 for display.
  */
 export function formatPriceFromCents(cents: number): string {
-  return priceFormatter.format(cents / 100)
+    return priceFormatter.format(cents / 100);
 }

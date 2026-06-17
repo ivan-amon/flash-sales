@@ -15,18 +15,6 @@ export interface City {
   country?: Country
 }
 
-export interface Paginated<T> {
-  current_page: number
-  data: T[]
-  last_page: number
-  next_page_url: string | null
-  prev_page_url: string | null
-  per_page: number
-  total: number
-  from: number | null
-  to: number | null
-}
-
 export interface EventItem {
   id: number
   title: string

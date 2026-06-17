@@ -23,6 +23,7 @@ Route::post('/organizer/login', [OrganizerAuthController::class, 'login']);
 // Organizer-only management
 Route::middleware(['auth:sanctum', 'abilities:is_organizer'])->group(function () {
     Route::post('/organizer/logout', [OrganizerAuthController::class, 'logout']);
+    Route::get('/organizer/events', [EventController::class, 'organizerEvents']);
 });
 
 // Other authenticated user routes
