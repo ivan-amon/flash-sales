@@ -13,8 +13,9 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('countries', function (Blueprint $table) {
-            $table->string('iso_code', 2)->unique()->after('name');
+        Schema::table('users', function (Blueprint $table) {
+            $table->string('country_code', 2)->nullable()->after('email');
+            $table->foreign('country_code')->references('iso_code')->on('countries')->nullOnDelete();
         });
     }
 
@@ -23,9 +24,9 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::table('countries', function (Blueprint $table) {
-            $table->dropUnique(['iso_code']);
-            $table->dropColumn('iso_code');
+        Schema::table('users', function (Blueprint $table) {
+            $table->dropForeign(['country_code']);
+            $table->dropColumn('country_code');
         });
     }
 };

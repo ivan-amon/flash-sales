@@ -21,7 +21,7 @@ class City extends Model
      */
     protected $fillable = [
         'name',
-        'country_id',
+        'country_code',
     ];
 
     /**
@@ -29,7 +29,7 @@ class City extends Model
      */
     public function country(): BelongsTo
     {
-        return $this->belongsTo(Country::class);
+        return $this->belongsTo(Country::class, 'country_code', 'iso_code');
     }
 
     /**

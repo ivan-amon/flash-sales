@@ -6,6 +6,7 @@ namespace Tests\Feature;
 
 use App\Enums\TicketStatus;
 use App\Models\City;
+use App\Models\Country;
 use App\Models\Event;
 use App\Models\Organizer;
 use App\Models\Ticket;
@@ -196,13 +197,13 @@ class EventTest extends TestCase
 
         $response->assertStatus(200);
         $response->assertJsonPath('city.id', $city->id);
-        $response->assertJsonPath('city.country.id', $city->country_id);
+        $response->assertJsonPath('city.country.iso_code', $city->country_code);
         $response->assertJsonStructure([
             'city' => [
                 'id',
                 'name',
                 'country' => [
-                    'id',
+                    'iso_code',
                     'name',
                 ],
             ],
@@ -316,9 +317,14 @@ class EventTest extends TestCase
 
     public function test_guest_can_list_all_events()
     {
-        // Create an organizer and 3 events linked to it
+        // Create an organizer and 3 events located in a single, known country
+        $country = Country::factory()->create(['iso_code' => 'ES']);
+        $city = City::factory()->create(['country_code' => $country->iso_code]);
         $organizer = Organizer::factory()->create();
-        $events = Event::factory()->count(3)->create(['organizer_id' => $organizer->id]);
+        $events = Event::factory()->count(3)->create([
+            'organizer_id' => $organizer->id,
+            'city_id' => $city->id,
+        ]);
 
         // For each event, create tickets: some available, some sold
         foreach ($events as $event) {
@@ -333,7 +339,7 @@ class EventTest extends TestCase
             ]);
         }
 
-        $response = $this->getJson('/api/events');
+        $response = $this->withHeader('X-Country-Code', $country->iso_code)->getJson('/api/events');
 
         $response->assertStatus(200);
         $response->assertJsonCount(3); // 3 events returned in a flat array
@@ -347,8 +353,13 @@ class EventTest extends TestCase
 
     public function test_event_listing_runs_a_constant_number_of_queries(): void
     {
+        $country = Country::factory()->create(['iso_code' => 'ES']);
+        $city = City::factory()->create(['country_code' => $country->iso_code]);
         $organizer = Organizer::factory()->create();
-        $events = Event::factory()->count(5)->create(['organizer_id' => $organizer->id]);
+        $events = Event::factory()->count(5)->create([
+            'organizer_id' => $organizer->id,
+            'city_id' => $city->id,
+        ]);
 
         foreach ($events as $event) {
             Ticket::factory()->count(4)->create([
@@ -358,7 +369,7 @@ class EventTest extends TestCase
         }
 
         DB::enableQueryLog();
-        $this->getJson('/api/events')->assertStatus(200);
+        $this->withHeader('X-Country-Code', $country->iso_code)->getJson('/api/events')->assertStatus(200);
         $queryCount = count(DB::getQueryLog());
         DB::disableQueryLog();
 
@@ -495,7 +506,7 @@ class EventTest extends TestCase
         $path = $response->json('cover_image_path');
         $this->assertNotNull($path);
         $disk->assertExists($path);
-        $response->assertJsonPath('cover_image_url', asset('storage/' . $path));
+        $response->assertJsonPath('cover_image_url', asset('storage/'.$path));
     }
 
     public function test_event_cover_image_must_be_a_valid_image(): void
@@ -590,7 +601,7 @@ class EventTest extends TestCase
         $indexes = collect(Schema::getIndexes('tickets'));
 
         $this->assertTrue(
-            $indexes->contains(fn(array $index): bool => $index['columns'] === ['event_id', 'status']),
+            $indexes->contains(fn (array $index): bool => $index['columns'] === ['event_id', 'status']),
             'The tickets table is missing the composite index on [event_id, status].'
         );
     }

@@ -47,7 +47,7 @@ Route::middleware(['auth:sanctum'])->group(function () {
 });
 
 // Public event routes
-Route::get('/events', [EventController::class, 'index']);
+Route::get('/events', [EventController::class, 'index'])->middleware('resolve.country');
 Route::get('/events/{event}', [EventController::class, 'show']);
 
 // Public location routes

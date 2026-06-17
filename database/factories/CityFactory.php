@@ -21,7 +21,7 @@ class CityFactory extends Factory
     {
         return [
             'name' => fake()->city(),
-            'country_id' => Country::factory(),
+            'country_code' => Country::factory(),
         ];
     }
 }

@@ -6,6 +6,7 @@ namespace Database\Seeders;
 
 use App\Enums\TicketStatus;
 use App\Models\City;
+use App\Models\Country;
 use App\Models\Event;
 use App\Models\Organizer;
 use App\Models\Ticket;
@@ -23,15 +24,18 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
+        $this->call(CountryCitySeeder::class);
+
+        $countryCodes = Country::query()->pluck('iso_code');
+
         foreach (range(1, 200) as $n) {
             User::factory()->create([
                 'name' => "Test User $n",
                 'email' => "test{$n}@email.com",
                 'password' => bcrypt('test1234'),
+                'country_code' => $countryCodes->random(),
             ]);
         }
-
-        $this->call(CountryCitySeeder::class);
 
         $event = Event::factory()->create([
             'title' => 'Test Event',

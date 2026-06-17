@@ -17,8 +17,8 @@ class CityController extends Controller
     public function index(Request $request): JsonResponse
     {
         $cities = City::query()
-            ->when($request->filled('country_id'), function ($query) use ($request) {
-                $query->where('country_id', $request->integer('country_id'));
+            ->when($request->filled('country_code'), function ($query) use ($request) {
+                $query->where('country_code', $request->string('country_code'));
             })
             ->orderBy('name')
             ->get();

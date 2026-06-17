@@ -20,13 +20,22 @@ use Illuminate\Support\Facades\Storage;
 class EventController extends Controller
 {
     /**
-     * Display a listing of the resource.
+     * Display a listing of the events located in the visitor's country.
+     *
+     * The country is resolved upstream by the ResolveCountry middleware and read
+     * from the request attributes, so the listing is scoped server-side instead
+     * of shipping every country's events to the frontend.
      */
-    public function index(): JsonResponse
+    public function index(Request $request): JsonResponse
     {
+        $countryCode = $request->attributes->get('country_code');
+
         // Optimizations: withCount avoids N+1 queries (available tickets counted in a single subquery),
         // and the tickets table is indexed on (event_id, status) for efficient availability counting.
         $events = Event::query()
+            ->whereHas('city', function (Builder $query) use ($countryCode): void {
+                $query->where('country_code', $countryCode);
+            })
             ->with('city.country')
             ->withCount(['tickets as available_tickets' => function (Builder $query): void {
                 $query->where('status', TicketStatus::Available);

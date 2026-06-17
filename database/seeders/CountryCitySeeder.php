@@ -23,13 +23,13 @@ class CountryCitySeeder extends Seeder
         DB::transaction(function (): void {
             foreach ($this->locations() as $countryName => $data) {
                 $country = Country::firstOrCreate(
-                    ['name' => $countryName],
                     ['iso_code' => $data['code']],
+                    ['name' => $countryName],
                 );
 
                 foreach ($data['cities'] as $cityName) {
                     City::firstOrCreate([
-                        'country_id' => $country->id,
+                        'country_code' => $country->iso_code,
                         'name' => $cityName,
                     ]);
                 }
