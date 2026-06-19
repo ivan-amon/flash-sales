@@ -70,25 +70,35 @@ const router = createRouter({
       component: () => import('@/features/organizer/views/OrganizerRegister.vue'),
     },
     {
+      path: '/organizer/email/verify',
+      name: 'organizer-email-verify-notice',
+      component: () => import('@/features/organizer/views/OrganizerEmailVerifyNotice.vue'),
+      meta: { requiresOrganizer: true },
+    },
+    {
       path: '/organizer/dashboard',
       name: 'organizer-dashboard',
       component: () => import('@/features/organizer/views/Dashboard.vue'),
-      meta: { requiresOrganizer: true },
+      meta: { requiresOrganizer: true, requiresOrganizerVerified: true },
     },
     {
       path: '/organizer/events/create',
       name: 'organizer-event-create',
       component: () => import('@/features/organizer/views/EventCreate.vue'),
-      meta: { requiresOrganizer: true },
+      meta: { requiresOrganizer: true, requiresOrganizerVerified: true },
     },
   ],
 })
 
 router.beforeEach((to) => {
-  const { isOrganizer, isUser } = useAuth()
+  const { isOrganizer, isUser, isOrganizerEmailVerified } = useAuth()
 
   if (to.meta.requiresOrganizer && !isOrganizer.value) {
     return { name: 'organizer-login' }
+  }
+
+  if (to.meta.requiresOrganizerVerified && !isOrganizerEmailVerified.value) {
+    return { name: 'organizer-email-verify-notice' }
   }
 
   if (to.meta.requiresUser && !isUser.value) {

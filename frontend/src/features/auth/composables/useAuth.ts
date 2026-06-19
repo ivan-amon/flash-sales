@@ -29,6 +29,9 @@ const isAuthenticated = computed<boolean>(() => token.value !== null)
 const isOrganizer = computed<boolean>(() => role.value === 'organizer')
 const isUser = computed<boolean>(() => role.value === 'user')
 const isEmailVerified = computed<boolean>(() => user.value?.email_verified_at != null)
+const isOrganizerEmailVerified = computed<boolean>(
+  () => organizer.value?.email_verified_at != null,
+)
 
 function persistSession(principal: User | Organizer, nextToken: string, nextRole: Role): void {
   token.value = nextToken
@@ -182,6 +185,32 @@ async function resendVerificationEmail(): Promise<boolean> {
   return response.ok
 }
 
+async function refreshOrganizer(): Promise<Organizer | null> {
+  if (role.value !== 'organizer') {
+    return null
+  }
+
+  const response = await apiFetch('/organizer')
+
+  if (!response.ok) {
+    return null
+  }
+
+  const updated = (await response.json()) as Organizer
+  organizer.value = updated
+  localStorage.setItem(USER_STORAGE_KEY, JSON.stringify(updated))
+
+  return updated
+}
+
+async function resendOrganizerVerificationEmail(): Promise<boolean> {
+  const response = await apiFetch('/organizer/email/verification-notification', {
+    method: 'POST',
+  })
+
+  return response.ok
+}
+
 async function logout(): Promise<void> {
   const path = role.value === 'organizer' ? '/organizer/logout' : '/logout'
 
@@ -203,13 +232,16 @@ export function useAuth() {
     isOrganizer,
     isUser,
     isEmailVerified,
+    isOrganizerEmailVerified,
     login,
     register,
     organizerLogin,
     organizerRegister,
     updateCountry,
     refreshUser,
+    refreshOrganizer,
     resendVerificationEmail,
+    resendOrganizerVerificationEmail,
     logout,
   }
 }
