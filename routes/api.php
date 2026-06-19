@@ -9,6 +9,7 @@ use App\Http\Controllers\EmailVerificationController;
 use App\Http\Controllers\EventController;
 use App\Http\Controllers\OrderController;
 use App\Http\Controllers\OrganizerAuthController;
+use App\Http\Controllers\OrganizerEmailVerificationController;
 use App\Http\Controllers\UserController;
 // use App\Http\Controllers\TicketController;
 use Illuminate\Http\Request;
@@ -30,9 +31,23 @@ Route::post('/email/verification-notification', [EmailVerificationController::cl
 Route::post('/organizer/register', [OrganizerAuthController::class, 'register']);
 Route::post('/organizer/login', [OrganizerAuthController::class, 'login']);
 
+// Organizer email verification
+Route::get('/organizer/email/verify/{id}/{hash}', [OrganizerEmailVerificationController::class, 'verify'])
+    ->middleware('signed')
+    ->name('organizer.verification.verify');
+Route::post('/organizer/email/verification-notification', [OrganizerEmailVerificationController::class, 'resend'])
+    ->middleware(['auth:sanctum', 'throttle:6,1'])
+    ->name('organizer.verification.send');
+
 // Organizer-only management
 Route::middleware(['auth:sanctum', 'abilities:is_organizer'])->group(function () {
+    Route::get('/organizer', function (Request $request) {
+        return $request->user();
+    });
     Route::post('/organizer/logout', [OrganizerAuthController::class, 'logout']);
+});
+
+Route::middleware(['auth:sanctum', 'abilities:is_organizer', 'verified'])->group(function () {
     Route::get('/organizer/events', [EventController::class, 'organizerEvents']);
 });
 

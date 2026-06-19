@@ -181,6 +181,25 @@ class OrganizerAuthTest extends TestCase
     }
 
     // ==================
+    // ME
+    // ==================
+
+    public function test_authenticated_organizer_can_fetch_own_profile(): void
+    {
+        $organizer = Organizer::factory()->create(['email' => 'org@example.com']);
+        Sanctum::actingAs($organizer, ['is_organizer']);
+
+        $this->getJson('/api/organizer')
+            ->assertStatus(200)
+            ->assertJson(['id' => $organizer->id, 'email' => 'org@example.com']);
+    }
+
+    public function test_guest_cannot_fetch_organizer_profile(): void
+    {
+        $this->getJson('/api/organizer')->assertStatus(401);
+    }
+
+    // ==================
     // LOGOUT
     // ==================
 

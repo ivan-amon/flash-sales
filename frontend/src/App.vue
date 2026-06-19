@@ -6,8 +6,16 @@ import { useAuth } from '@/features/auth/composables/useAuth'
 import CountrySelect from '@/shared/components/CountrySelect.vue'
 
 const router = useRouter()
-const { user, organizer, isAuthenticated, isOrganizer, isUser, isEmailVerified, logout } =
-  useAuth()
+const {
+  user,
+  organizer,
+  isAuthenticated,
+  isOrganizer,
+  isUser,
+  isEmailVerified,
+  isOrganizerEmailVerified,
+  logout,
+} = useAuth()
 
 const isMenuOpen = ref(false)
 
@@ -85,6 +93,16 @@ async function handleLogout(): Promise<void> {
     <i class="bi bi-exclamation-triangle me-2"></i>
     Please verify your email to reserve tickets.
     <router-link to="/email/verify" class="alert-link">Verify now</router-link>
+  </div>
+
+  <div
+    v-if="isOrganizer && !isOrganizerEmailVerified"
+    class="alert alert-warning rounded-0 mb-0 text-center"
+    role="alert"
+  >
+    <i class="bi bi-exclamation-triangle me-2"></i>
+    Please verify your email to create events.
+    <router-link to="/organizer/email/verify" class="alert-link">Verify now</router-link>
   </div>
 
   <router-view />

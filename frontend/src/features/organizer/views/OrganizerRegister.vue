@@ -29,7 +29,7 @@ async function handleSubmit(): Promise<void> {
     })
 
     if (result.ok) {
-      await router.push('/organizer/events/create')
+      await router.push('/organizer/email/verify')
     } else {
       errors.value = result.errors
     }

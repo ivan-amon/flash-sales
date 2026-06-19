@@ -7,6 +7,7 @@ namespace App\Http\Controllers;
 use App\Http\Requests\OrganizerLoginRequest;
 use App\Http\Requests\OrganizerRegisterRequest;
 use App\Models\Organizer;
+use Illuminate\Auth\Events\Registered;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
@@ -29,6 +30,8 @@ class OrganizerAuthController extends Controller
             'email' => $validated['email'],
             'password' => Hash::make($validated['password']),
         ]);
+
+        event(new Registered($organizer));
 
         $token = $organizer->createToken('auth_token', ['is_organizer'])->plainTextToken;
 
