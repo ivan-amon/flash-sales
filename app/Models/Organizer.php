@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Models;
 
-use App\Notifications\QueuedVerifyEmail;
+use App\Notifications\QueuedVerifyOrganizerEmail;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -40,7 +40,7 @@ class Organizer extends Authenticatable implements MustVerifyEmail
      */
     public function sendEmailVerificationNotification(): void
     {
-        $this->notify(new QueuedVerifyEmail);
+        $this->notify(new QueuedVerifyOrganizerEmail);
     }
 
     public function events(): HasMany

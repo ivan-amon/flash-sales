@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Tests\Feature\Auth;
 
 use App\Models\Organizer;
-use App\Notifications\QueuedVerifyEmail;
+use App\Notifications\QueuedVerifyOrganizerEmail;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\URL;
@@ -35,7 +35,16 @@ class OrganizerEmailVerificationTest extends TestCase
         $organizer = Organizer::where('email', 'org@example.com')->firstOrFail();
 
         $this->assertNull($organizer->email_verified_at);
-        Notification::assertSentTo($organizer, QueuedVerifyEmail::class);
+        Notification::assertSentTo($organizer, QueuedVerifyOrganizerEmail::class);
+    }
+
+    public function test_verification_notification_links_to_organizer_verification_route(): void
+    {
+        $organizer = Organizer::factory()->unverified()->create();
+
+        $mail = (new QueuedVerifyOrganizerEmail)->toMail($organizer);
+
+        $this->assertStringContainsString('/api/organizer/email/verify/', $mail->actionUrl);
     }
 
     // ==================
@@ -100,7 +109,7 @@ class OrganizerEmailVerificationTest extends TestCase
             ->assertStatus(200)
             ->assertJson(['message' => 'Verification link sent.']);
 
-        Notification::assertSentTo($organizer, QueuedVerifyEmail::class);
+        Notification::assertSentTo($organizer, QueuedVerifyOrganizerEmail::class);
     }
 
     public function test_resend_for_verified_organizer_returns_already_verified(): void
