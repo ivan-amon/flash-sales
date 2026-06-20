@@ -142,6 +142,50 @@ async function organizerRegister(payload: OrganizerRegisterPayload): Promise<Aut
   )
 }
 
+interface ResetPasswordPayload {
+  token: string
+  email: string
+  password: string
+  password_confirmation: string
+}
+
+async function forgotPassword(email: string): Promise<AuthResult> {
+  return postAuth(
+    '/password/forgot',
+    { email },
+    () => {},
+    'Could not send the reset link. Please try again.',
+  )
+}
+
+async function resetPassword(payload: ResetPasswordPayload): Promise<AuthResult> {
+  return postAuth(
+    '/password/reset',
+    payload,
+    (data: { user: User; token: string }) => setUserSession(data.user, data.token),
+    'Could not reset the password. Please try again.',
+  )
+}
+
+async function organizerForgotPassword(email: string): Promise<AuthResult> {
+  return postAuth(
+    '/organizer/password/forgot',
+    { email },
+    () => {},
+    'Could not send the reset link. Please try again.',
+  )
+}
+
+async function organizerResetPassword(payload: ResetPasswordPayload): Promise<AuthResult> {
+  return postAuth(
+    '/organizer/password/reset',
+    payload,
+    (data: { organizer: Organizer; token: string }) =>
+      setOrganizerSession(data.organizer, data.token),
+    'Could not reset the password. Please try again.',
+  )
+}
+
 async function updateCountry(code: string): Promise<boolean> {
   const response = await apiFetch('/user/country', {
     method: 'PATCH',
@@ -237,6 +281,10 @@ export function useAuth() {
     register,
     organizerLogin,
     organizerRegister,
+    forgotPassword,
+    resetPassword,
+    organizerForgotPassword,
+    organizerResetPassword,
     updateCountry,
     refreshUser,
     refreshOrganizer,

@@ -24,8 +24,9 @@ router.afterEach(() => {
 })
 
 async function handleLogout(): Promise<void> {
+  const wasOrganizer = isOrganizer.value
   await logout()
-  await router.push('/login')
+  await router.push(wasOrganizer ? '/organizer/login' : '/login')
 }
 </script>
 
