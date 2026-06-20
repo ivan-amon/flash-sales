@@ -10,6 +10,8 @@ use App\Http\Controllers\EventController;
 use App\Http\Controllers\OrderController;
 use App\Http\Controllers\OrganizerAuthController;
 use App\Http\Controllers\OrganizerEmailVerificationController;
+use App\Http\Controllers\OrganizerPasswordResetController;
+use App\Http\Controllers\PasswordResetController;
 use App\Http\Controllers\UserController;
 // use App\Http\Controllers\TicketController;
 use Illuminate\Http\Request;
@@ -27,6 +29,14 @@ Route::post('/email/verification-notification', [EmailVerificationController::cl
     ->middleware(['auth:sanctum', 'throttle:6,1'])
     ->name('verification.send');
 
+// User password reset
+Route::post('/password/forgot', [PasswordResetController::class, 'forgot'])
+    ->middleware('throttle:6,1')
+    ->name('password.forgot');
+Route::post('/password/reset', [PasswordResetController::class, 'reset'])
+    ->middleware('throttle:6,1')
+    ->name('password.reset');
+
 // Organizer authentication routes
 Route::post('/organizer/register', [OrganizerAuthController::class, 'register']);
 Route::post('/organizer/login', [OrganizerAuthController::class, 'login']);
@@ -38,6 +48,14 @@ Route::get('/organizer/email/verify/{id}/{hash}', [OrganizerEmailVerificationCon
 Route::post('/organizer/email/verification-notification', [OrganizerEmailVerificationController::class, 'resend'])
     ->middleware(['auth:sanctum', 'throttle:6,1'])
     ->name('organizer.verification.send');
+
+// Organizer password reset
+Route::post('/organizer/password/forgot', [OrganizerPasswordResetController::class, 'forgot'])
+    ->middleware('throttle:6,1')
+    ->name('organizer.password.forgot');
+Route::post('/organizer/password/reset', [OrganizerPasswordResetController::class, 'reset'])
+    ->middleware('throttle:6,1')
+    ->name('organizer.password.reset');
 
 // Organizer-only management
 Route::middleware(['auth:sanctum', 'abilities:is_organizer'])->group(function () {
