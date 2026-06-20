@@ -1,26 +1,24 @@
 <script setup lang="ts">
 import { ref } from 'vue'
-import { useRouter } from 'vue-router'
 import { useAuth } from '@/features/auth/composables/useAuth'
 import type { ValidationErrors } from '@/features/auth/types/user'
 
-const router = useRouter()
-const { login } = useAuth()
+const { forgotPassword } = useAuth()
 
 const email = ref('')
-const password = ref('')
 const errors = ref<ValidationErrors>({})
 const isSubmitting = ref(false)
+const isSent = ref(false)
 
 async function handleSubmit(): Promise<void> {
   isSubmitting.value = true
   errors.value = {}
 
   try {
-    const result = await login(email.value, password.value)
+    const result = await forgotPassword(email.value)
 
     if (result.ok) {
-      await router.push('/')
+      isSent.value = true
     } else {
       errors.value = result.errors
     }
@@ -36,10 +34,19 @@ async function handleSubmit(): Promise<void> {
       <div class="col-md-6 col-lg-5">
         <div class="card">
           <div class="card-body">
-            <h1 class="card-title h4 mb-4">Sign in</h1>
+            <h1 class="card-title h4 mb-4">Reset your password</h1>
 
-            <form novalidate @submit.prevent="handleSubmit">
-              <div class="mb-3">
+            <div v-if="isSent" class="alert alert-success" role="alert">
+              If an account exists for that email, a password reset link is on its way. Check your
+              inbox.
+            </div>
+
+            <form v-else novalidate @submit.prevent="handleSubmit">
+              <p class="text-muted">
+                Enter your email and we'll send you a link to reset your password.
+              </p>
+
+              <div class="mb-4">
                 <label for="email" class="form-label">Email</label>
                 <input
                   id="email"
@@ -54,21 +61,6 @@ async function handleSubmit(): Promise<void> {
                 </div>
               </div>
 
-              <div class="mb-4">
-                <label for="password" class="form-label">Password</label>
-                <input
-                  id="password"
-                  v-model="password"
-                  type="password"
-                  class="form-control"
-                  :class="{ 'is-invalid': errors.password }"
-                  autocomplete="current-password"
-                />
-                <div v-if="errors.password" class="invalid-feedback">
-                  {{ errors.password[0] }}
-                </div>
-              </div>
-
               <button type="submit" class="btn btn-primary w-100" :disabled="isSubmitting">
                 <span
                   v-if="isSubmitting"
@@ -76,17 +68,13 @@ async function handleSubmit(): Promise<void> {
                   role="status"
                   aria-hidden="true"
                 ></span>
-                {{ isSubmitting ? 'Signing in…' : 'Sign in' }}
+                {{ isSubmitting ? 'Sending…' : 'Send reset link' }}
               </button>
             </form>
 
-            <p class="text-center mt-3 mb-0">
-              <router-link to="/password/forgot">Forgot your password?</router-link>
-            </p>
-
-            <p class="text-center text-muted mt-2 mb-0">
-              Don't have an account?
-              <router-link to="/register">Register</router-link>
+            <p class="text-center text-muted mt-3 mb-0">
+              Remember your password?
+              <router-link to="/login">Sign in</router-link>
             </p>
           </div>
         </div>

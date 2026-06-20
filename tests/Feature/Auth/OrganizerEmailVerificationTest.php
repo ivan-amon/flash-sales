@@ -56,7 +56,7 @@ class OrganizerEmailVerificationTest extends TestCase
         $organizer = Organizer::factory()->unverified()->create();
 
         $this->get($this->verificationUrl($organizer))
-            ->assertRedirect(config('app.frontend_url').'/email/verified');
+            ->assertRedirect(config('app.frontend_url') . '/email/verified');
 
         $this->assertNotNull($organizer->fresh()->email_verified_at);
     }
@@ -79,7 +79,7 @@ class OrganizerEmailVerificationTest extends TestCase
     {
         $organizer = Organizer::factory()->unverified()->create();
 
-        $url = $this->verificationUrl($organizer).'tampered';
+        $url = $this->verificationUrl($organizer) . 'tampered';
 
         $this->get($url)->assertStatus(403);
 
@@ -91,7 +91,7 @@ class OrganizerEmailVerificationTest extends TestCase
         $organizer = Organizer::factory()->create();
 
         $this->get($this->verificationUrl($organizer))
-            ->assertRedirect(config('app.frontend_url').'/email/verified');
+            ->assertRedirect(config('app.frontend_url') . '/email/verified');
     }
 
     // ==================

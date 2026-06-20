@@ -80,7 +80,11 @@ async function handleSubmit(): Promise<void> {
               </button>
             </form>
 
-            <p class="text-center text-muted mt-3 mb-0">
+            <p class="text-center mt-3 mb-0">
+              <router-link to="/organizer/password/forgot">Forgot your password?</router-link>
+            </p>
+
+            <p class="text-center text-muted mt-2 mb-0">
               Need an organizer account?
               <router-link to="/organizer/register">Register</router-link>
             </p>

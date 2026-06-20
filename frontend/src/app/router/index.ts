@@ -49,6 +49,16 @@ const router = createRouter({
       component: () => import('@/features/auth/views/RegisterForm.vue'),
     },
     {
+      path: '/password/forgot',
+      name: 'password-forgot',
+      component: () => import('@/features/auth/views/ForgotPassword.vue'),
+    },
+    {
+      path: '/password/reset',
+      name: 'password-reset',
+      component: () => import('@/features/auth/views/ResetPassword.vue'),
+    },
+    {
       path: '/email/verify',
       name: 'email-verify-notice',
       component: () => import('@/features/auth/views/EmailVerifyNotice.vue'),
@@ -68,6 +78,16 @@ const router = createRouter({
       path: '/organizer/register',
       name: 'organizer-register',
       component: () => import('@/features/organizer/views/OrganizerRegister.vue'),
+    },
+    {
+      path: '/organizer/password/forgot',
+      name: 'organizer-password-forgot',
+      component: () => import('@/features/organizer/views/OrganizerForgotPassword.vue'),
+    },
+    {
+      path: '/organizer/password/reset',
+      name: 'organizer-password-reset',
+      component: () => import('@/features/organizer/views/OrganizerResetPassword.vue'),
     },
     {
       path: '/organizer/email/verify',

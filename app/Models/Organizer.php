@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Models;
 
+use App\Notifications\QueuedResetOrganizerPassword;
 use App\Notifications\QueuedVerifyOrganizerEmail;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -41,6 +42,16 @@ class Organizer extends Authenticatable implements MustVerifyEmail
     public function sendEmailVerificationNotification(): void
     {
         $this->notify(new QueuedVerifyOrganizerEmail);
+    }
+
+    /**
+     * Send the password reset notification on the queue.
+     *
+     * @param  string  $token
+     */
+    public function sendPasswordResetNotification($token): void
+    {
+        $this->notify(new QueuedResetOrganizerPassword($token));
     }
 
     public function events(): HasMany
