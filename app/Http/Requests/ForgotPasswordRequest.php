@@ -18,6 +18,8 @@ class ForgotPasswordRequest extends FormRequest
      */
     public function rules(): array
     {
-        throw new \RuntimeException('Not implemented');
+        return [
+            'email' => 'required|string|email',
+        ];
     }
 }

@@ -69,7 +69,7 @@ class User extends Authenticatable implements MustVerifyEmail
      */
     public function sendPasswordResetNotification($token): void
     {
-        throw new \RuntimeException('Not implemented');
+        $this->notify(new QueuedResetUserPassword($token));
     }
 
     /**

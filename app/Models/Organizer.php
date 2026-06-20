@@ -51,7 +51,7 @@ class Organizer extends Authenticatable implements MustVerifyEmail
      */
     public function sendPasswordResetNotification($token): void
     {
-        throw new \RuntimeException('Not implemented');
+        $this->notify(new QueuedResetOrganizerPassword($token));
     }
 
     public function events(): HasMany

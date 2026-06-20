@@ -54,7 +54,7 @@ class OrganizerPasswordResetTest extends TestCase
 
         $mail = (new QueuedResetOrganizerPassword('the-token'))->toMail($organizer);
 
-        $this->assertStringContainsString(config('app.frontend_url').'/organizer/password/reset', $mail->actionUrl);
+        $this->assertStringContainsString(config('app.frontend_url') . '/organizer/password/reset', $mail->actionUrl);
         $this->assertStringContainsString('the-token', $mail->actionUrl);
         $this->assertStringContainsString(urlencode($organizer->email), $mail->actionUrl);
     }

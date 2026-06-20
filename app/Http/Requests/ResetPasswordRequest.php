@@ -18,6 +18,10 @@ class ResetPasswordRequest extends FormRequest
      */
     public function rules(): array
     {
-        throw new \RuntimeException('Not implemented');
+        return [
+            'token' => 'required|string',
+            'email' => 'required|string|email',
+            'password' => 'required|string|min:8|confirmed',
+        ];
     }
 }

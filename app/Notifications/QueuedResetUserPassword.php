@@ -17,6 +17,7 @@ class QueuedResetUserPassword extends ResetPassword implements ShouldQueue
      */
     protected function resetUrl($notifiable): string
     {
-        throw new \RuntimeException('Not implemented');
+        return config('app.frontend_url').'/password/reset?token='.$this->token
+            .'&email='.urlencode($notifiable->getEmailForPasswordReset());
     }
 }
