@@ -1,10 +1,14 @@
 # Flash Sales ⚡
 
-Flash Sales is a system built on a Laravel 12 (PHP 8.5) REST API, designed to manage events, tickets, and purchase orders for high-demand ticket sales and fast sales campaigns. It is prepared to resolve race conditions and preserve inventory integrity under heavy concurrent load using Redis-based atomic locking.
+**Flash Sales** is a system built on a Laravel 12 (PHP 8.5) REST API, designed to manage events, tickets, and purchase orders for **high-demand ticket sales and fast sales campaigns**. It is prepared to resolve race conditions and preserve inventory integrity under **heavy concurrent load** using Redis-based atomic locking and MySQL row-level locking.
+
+![animation](./docs/flash-sales-animation.gif)
+
+This animation shows how the system behaves when demand exceeds supply — more users trying to buy than tickets available.
 
 ## Description
 
-It allows organizers to create and manage events and tickets, while users can browse events, reserve and purchase tickets, and manage their orders. The system supports different statuses for orders and tickets, as well as sale start dates and order expiration. Payments are simulated through a payment gateway service.
+It allows organizers to create and manage events and tickets, while users can browse events, reserve and purchase tickets, and manage their orders. The system supports different statuses for orders and tickets, as well as sale start dates and order expiration.
 
 The core of the system is the Laravel API, which can be consumed directly. A Vue 3 + TypeScript frontend is included as a reference client, but it is optional — you are free to consume the API however you like.
 
